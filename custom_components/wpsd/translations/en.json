@@ -7,7 +7,9 @@
       "user": {
         "data": {
           "host": "Host",
-          "port": "Port"
+          "password": "Password",
+          "port": "Port",
+          "username": "Username"
         },
         "title": "Connect to WPSD"
       }

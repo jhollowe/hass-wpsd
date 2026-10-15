@@ -7,14 +7,16 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_PORT, CONF_USERNAME
 
-from .const import DEFAULT_PORT, DOMAIN
+from .const import DEFAULT_PORT, DEFAULT_USERNAME, DOMAIN
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_HOST): str,
         vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
+        vol.Required(CONF_USERNAME, default=DEFAULT_USERNAME): str,
+        vol.Required(CONF_PASSWORD): str,
     }
 )
 
@@ -29,7 +31,7 @@ class WpsdConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle the initial step."""
         if user_input is not None:
-            # TODO: validate connectivity to the WPSD instance once the client exists.
+            # TODO: test host and credentials against WPSD once the client exists.
             self._async_abort_entries_match({CONF_HOST: user_input[CONF_HOST]})
             return self.async_create_entry(
                 title=user_input[CONF_HOST], data=user_input
