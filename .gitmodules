@@ -1,0 +1,18 @@
+[submodule "reference_repos/WPSD-Binaries"]
+	path = reference_repos/WPSD-Binaries
+	url = https://repo.w0chp.net/WPSD-Dev/WPSD-Binaries.git
+[submodule "reference_repos/WPSD-Scripts"]
+	path = reference_repos/WPSD-Scripts
+	url = https://repo.w0chp.net/WPSD-Dev/WPSD-Scripts.git
+[submodule "reference_repos/WPSD-WebCode"]
+	path = reference_repos/WPSD-WebCode
+	url = https://repo.w0chp.net/WPSD-Dev/WPSD-WebCode.git
+[submodule "reference_repos/wpsd-user-manual"]
+	path = reference_repos/wpsd-user-manual
+	url = https://repo.w0chp.net/WPSD-Dev/wpsd-user-manual.git
+[submodule "reference_repos/wpsd_docs"]
+	path = reference_repos/wpsd_docs
+	url = https://repo.w0chp.net/WPSD-Dev/wpsd_docs.git
+[submodule "reference_repos/home_assistant_core"]
+	path = reference_repos/home_assistant_core
+	url = https://github.com/home-assistant/core.git
