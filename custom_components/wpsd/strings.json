@@ -1,0 +1,16 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to WPSD",
+        "data": {
+          "host": "[%key:common::config_flow::data::host%]",
+          "port": "[%key:common::config_flow::data::port%]"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+    }
+  }
+}
