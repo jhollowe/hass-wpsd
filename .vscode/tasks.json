@@ -56,21 +56,6 @@
         "panel": "new"
       },
       "problemMatcher": []
-    },
-    {
-      "label": "Compile Translations",
-      "detail": "Compile translation strings for the WPSD integration.",
-      "type": "shell",
-      "command": "${command:python.interpreterPath} -m script.translations develop --all",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "new"
-      },
-      "problemMatcher": []
     }
   ],
   "inputs": []

@@ -29,6 +29,20 @@ if ! [ -x "$(command -v hass)" ]; then
   uv pip install homeassistant
 fi
 
+# Install pre-commit if not already installed
+if ! [ -x "$(command -v pre-commit)" ]; then
+  echo "Installing pre-commit..."
+  uv pip install pre-commit
+fi
+
+# Install pre-commit hooks
+if [ -x "$(command -v pre-commit)" ]; then
+  echo "Installing pre-commit hooks..."
+  pre-commit install
+else
+  echo "pre-commit not found, no hooks installed"
+fi
+
 # Link the WPSD custom component into Home Assistant's config directory
 CUSTOM_COMPONENTS_DIR=config/custom_components
 mkdir -p "$CUSTOM_COMPONENTS_DIR"
