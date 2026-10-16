@@ -92,7 +92,7 @@ class WpsdModeBinarySensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def name(self) -> str:
         """Return the name of the sensor."""
-        return f"{self._mode} Enabled"
+        return self._mode
 
     @property
     def is_on(self) -> bool:
