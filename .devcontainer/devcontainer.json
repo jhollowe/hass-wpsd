@@ -65,7 +65,7 @@
         "json.schemas": [
           {
             "fileMatch": ["custom_components/*/manifest.json"],
-            "url": "${workspaceFolder}/script/json_schemas/manifest_schema.json" // TODO fix this to point to the real schema
+            "url": "https://raw.githubusercontent.com/home-assistant/core/master/script/json_schemas/manifest_schema.json"
           }
         ]
       }
