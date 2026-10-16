@@ -73,7 +73,7 @@ async def test_sensor_names_come_from_translations(
 ) -> None:
     await setup_entry(hass, mock_config_entry)
     state = hass.states.get(entity_id(hass, mock_config_entry, "cpu_temp"))
-    assert state.attributes["friendly_name"] == "W1AW CPU Temperature"
+    assert state.attributes["friendly_name"] == "W4DW CPU Temperature"
 
 
 @pytest.mark.parametrize(
@@ -183,7 +183,7 @@ async def test_mode_sensor_name_is_just_the_mode(
 ) -> None:
     await setup_entry(hass, mock_config_entry)
     state = hass.states.get(entity_id(hass, mock_config_entry, "d_star_status"))
-    assert state.attributes["friendly_name"] == "W1AW D-Star"
+    assert state.attributes["friendly_name"] == "W4DW D-Star"
 
 
 async def test_mode_sensor_network_status_attribute(

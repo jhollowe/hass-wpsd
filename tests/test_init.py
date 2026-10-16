@@ -47,7 +47,7 @@ async def test_callsign_fetched_once_at_setup(
 ) -> None:
     await setup_entry(hass, mock_config_entry)
     mock_wpsd["async_get_callsign"].assert_awaited_once()
-    assert mock_config_entry.runtime_data.client.callsign == "W1AW"
+    assert mock_config_entry.runtime_data.client.callsign == "W4DW"
 
 
 async def test_setup_retries_when_host_unreachable(
@@ -80,7 +80,7 @@ async def test_device_is_named_after_callsign(
     await setup_entry(hass, mock_config_entry)
     device = device_for(hass, mock_config_entry)
     assert device is not None
-    assert device.name == "W1AW"
+    assert device.name == "W4DW"
     assert device.manufacturer == "WPSD"
     assert device.model == "WPSD Hotspot"
     assert device.sw_version == "abc1234def"

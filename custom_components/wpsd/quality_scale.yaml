@@ -45,3 +45,37 @@ rules:
     status: exempt
     comment: The dashboard is read without authentication.
   test-coverage: todo
+  # Gold
+  devices: done
+  diagnostics: done
+  discovery:
+    status: exempt
+    comment: |
+      No service advertisement (mDNS service record or SSDP) was found in the
+      WPSD sources, so there is nothing to discover.
+  discovery-update-info:
+    status: exempt
+    comment: This integration does not support discovery.
+  docs-data-update: done
+  docs-examples: done
+  docs-known-limitations: done
+  docs-supported-devices: done
+  docs-supported-functions: done
+  docs-troubleshooting: done
+  docs-use-cases: done
+  dynamic-devices:
+    status: exempt
+    comment: Each config entry is a single fixed hotspot device.
+  entity-category: done
+  entity-device-class: done
+  entity-disabled-by-default: done
+  entity-translations: done
+  exception-translations: done
+  icon-translations: done
+  reconfiguration-flow: done
+  repair-issues:
+    status: exempt
+    comment: This integration has no user-fixable issues to raise.
+  stale-devices:
+    status: exempt
+    comment: Each config entry is a single fixed hotspot device.

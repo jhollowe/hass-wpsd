@@ -33,7 +33,7 @@ RADIOINFO_HTML = """
 """
 
 HOMEPAGE_HTML = """
-<html><head><title>W1AW - Dashboard</title></head><body>
+<html><head><title>W4DW - Dashboard</title></head><body>
 <span title='WPSD Dashboard Version # abc1234def'>WPSD Dashboard Ver.# abc1234def</span>
 <div id="hwInfoTable" class="dashboard-header-stats">
   <div class="stat-card">
@@ -146,7 +146,7 @@ def test_parse_cpu_missing() -> None:
 
 
 def test_parse_callsign() -> None:
-    assert WpsdClient._parse_callsign(HOMEPAGE_HTML) == "W1AW"
+    assert WpsdClient._parse_callsign(HOMEPAGE_HTML) == "W4DW"
 
 
 @pytest.mark.parametrize(
@@ -282,8 +282,8 @@ async def test_base_url_uses_host_and_port() -> None:
 
 
 async def test_get_last_heard() -> None:
-    client, session = make_client(FakeResponse(json_data=[{"callsign": "W1AW"}]))
-    assert await client.async_get_last_heard(limit=3) == [{"callsign": "W1AW"}]
+    client, session = make_client(FakeResponse(json_data=[{"callsign": "W4DW"}]))
+    assert await client.async_get_last_heard(limit=3) == [{"callsign": "W4DW"}]
     url = session.get.call_args.args[0]
     assert url == (
         f"http://wpsd.local:8080{ENDPOINT_API}?limit=3&names=false&country=false"
@@ -328,7 +328,7 @@ async def test_get_modes_with_network_fetches_once() -> None:
 
 async def test_get_callsign() -> None:
     client, _ = make_client(FakeResponse(text=HOMEPAGE_HTML))
-    assert await client.async_get_callsign() == "W1AW"
+    assert await client.async_get_callsign() == "W4DW"
 
 
 @pytest.mark.parametrize("method", ["_async_get_text", "_async_get_json"])

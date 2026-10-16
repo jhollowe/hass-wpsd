@@ -33,6 +33,24 @@
       },
       "disk_total_varlog": {
         "default": "mdi:harddisk"
+      },
+      "d_star": {
+        "default": "mdi:radio-handheld"
+      },
+      "dmr": {
+        "default": "mdi:radio-handheld"
+      },
+      "ysf": {
+        "default": "mdi:radio-handheld"
+      },
+      "p25": {
+        "default": "mdi:radio-handheld"
+      },
+      "nxdn": {
+        "default": "mdi:radio-handheld"
+      },
+      "pocsag": {
+        "default": "mdi:radio-handheld"
       }
     }
   }

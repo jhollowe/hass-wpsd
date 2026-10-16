@@ -56,29 +56,55 @@ class WpsdConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         if user_input is not None:
             self._async_abort_entries_match({CONF_HOST: user_input[CONF_HOST]})
-
-            session = async_create_clientsession(self.hass)
-            client = WpsdClient(
-                host=user_input[CONF_HOST],
-                port=user_input[CONF_PORT],
-                session=session,
-            )
-
-            try:
-                await client.async_get_last_heard(limit=1)
-            except aiohttp.ClientError, TimeoutError:
-                errors["base"] = "cannot_connect"
-            except Exception:  # noqa: BLE001
-                LOGGER.exception("Unexpected error")
-                errors["base"] = "unknown"
-            else:
+            if not (errors := await self._async_test_connection(user_input)):
                 return self.async_create_entry(
                     title=user_input[CONF_HOST], data=user_input
                 )
 
         return self.async_show_form(
-            step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
+            step_id="user",
+            data_schema=self.add_suggested_values_to_schema(
+                STEP_USER_DATA_SCHEMA, user_input
+            ),
+            errors=errors,
         )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle changing the hotspot's host or port."""
+        errors: dict[str, str] = {}
+        entry = self._get_reconfigure_entry()
+        if user_input is not None:
+            self._async_abort_entries_match({CONF_HOST: user_input[CONF_HOST]})
+            if not (errors := await self._async_test_connection(user_input)):
+                return self.async_update_reload_and_abort(
+                    entry, title=user_input[CONF_HOST], data=user_input
+                )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(
+                STEP_USER_DATA_SCHEMA, user_input or entry.data
+            ),
+            errors=errors,
+        )
+
+    async def _async_test_connection(self, user_input: dict[str, Any]) -> dict[str, str]:
+        """Return form errors if the dashboard can't be reached."""
+        client = WpsdClient(
+            host=user_input[CONF_HOST],
+            port=user_input[CONF_PORT],
+            session=async_create_clientsession(self.hass),
+        )
+        try:
+            await client.async_get_last_heard(limit=1)
+        except aiohttp.ClientError, TimeoutError:
+            return {"base": "cannot_connect"}
+        except Exception:  # noqa: BLE001
+            LOGGER.exception("Unexpected error")
+            return {"base": "unknown"}
+        return {}
 
 
 class WpsdOptionsFlow(OptionsFlowWithReload):

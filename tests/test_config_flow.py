@@ -161,3 +161,63 @@ async def test_options_flow_rejects_out_of_range(
     data = {CONF_MODE_SCAN_INTERVAL: 5, CONF_SYSTEM_SCAN_INTERVAL: 30, key: value}
     with pytest.raises(InvalidData):
         await hass.config_entries.options.async_configure(result["flow_id"], data)
+
+
+async def test_reconfigure_updates_entry(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> None:
+    mock_config_entry.add_to_hass(hass)
+    result = await mock_config_entry.start_reconfigure_flow(hass)
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reconfigure"
+
+    with (
+        patch(LAST_HEARD, AsyncMock(return_value=[])),
+        patch(SETUP_ENTRY, AsyncMock(return_value=True)),
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_HOST: "new.local", CONF_PORT: 8080}
+        )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    assert mock_config_entry.data == {CONF_HOST: "new.local", CONF_PORT: 8080}
+    assert mock_config_entry.title == "new.local"
+
+
+async def test_reconfigure_error_then_recovers(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> None:
+    mock_config_entry.add_to_hass(hass)
+    result = await mock_config_entry.start_reconfigure_flow(hass)
+    with patch(LAST_HEARD, AsyncMock(side_effect=TimeoutError())):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], USER_INPUT
+        )
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "cannot_connect"}
+
+    with (
+        patch(LAST_HEARD, AsyncMock(return_value=[])),
+        patch(SETUP_ENTRY, AsyncMock(return_value=True)),
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], USER_INPUT
+        )
+    assert result["reason"] == "reconfigure_successful"
+
+
+async def test_reconfigure_aborts_for_host_of_other_entry(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> None:
+    other = MockConfigEntry(
+        domain=DOMAIN, data={CONF_HOST: "other.local", CONF_PORT: 80}
+    )
+    other.add_to_hass(hass)
+    mock_config_entry.add_to_hass(hass)
+    result = await mock_config_entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_HOST: "other.local", CONF_PORT: 80}
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"

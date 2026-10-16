@@ -14,6 +14,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import (
     PERCENTAGE,
+    EntityCategory,
     UnitOfFrequency,
     UnitOfInformation,
     UnitOfTemperature,
@@ -80,11 +81,13 @@ SENSORS: tuple[WpsdSensorEntityDescription, ...] = (
     WpsdSensorEntityDescription(
         key="firmware",
         translation_key="firmware",
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data.firmware,
     ),
     WpsdSensorEntityDescription(
         key="disk_usage_root",
         translation_key="disk_usage_root",
+        entity_category=EntityCategory.DIAGNOSTIC,
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: _disk_stat(data.disk_root, "percent"),
@@ -92,6 +95,7 @@ SENSORS: tuple[WpsdSensorEntityDescription, ...] = (
     WpsdSensorEntityDescription(
         key="disk_used_root",
         translation_key="disk_used_root",
+        entity_category=EntityCategory.DIAGNOSTIC,
         native_unit_of_measurement=UnitOfInformation.GIGABYTES,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
@@ -100,6 +104,7 @@ SENSORS: tuple[WpsdSensorEntityDescription, ...] = (
     WpsdSensorEntityDescription(
         key="disk_total_root",
         translation_key="disk_total_root",
+        entity_category=EntityCategory.DIAGNOSTIC,
         native_unit_of_measurement=UnitOfInformation.GIGABYTES,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
@@ -108,6 +113,7 @@ SENSORS: tuple[WpsdSensorEntityDescription, ...] = (
     WpsdSensorEntityDescription(
         key="disk_usage_varlog",
         translation_key="disk_usage_varlog",
+        entity_category=EntityCategory.DIAGNOSTIC,
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: _disk_stat(data.disk_varlog, "percent"),
@@ -115,6 +121,7 @@ SENSORS: tuple[WpsdSensorEntityDescription, ...] = (
     WpsdSensorEntityDescription(
         key="disk_used_varlog",
         translation_key="disk_used_varlog",
+        entity_category=EntityCategory.DIAGNOSTIC,
         native_unit_of_measurement=UnitOfInformation.GIGABYTES,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
@@ -123,6 +130,7 @@ SENSORS: tuple[WpsdSensorEntityDescription, ...] = (
     WpsdSensorEntityDescription(
         key="disk_total_varlog",
         translation_key="disk_total_varlog",
+        entity_category=EntityCategory.DIAGNOSTIC,
         native_unit_of_measurement=UnitOfInformation.GIGABYTES,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
@@ -147,6 +155,7 @@ SENSORS: tuple[WpsdSensorEntityDescription, ...] = (
     WpsdSensorEntityDescription(
         key="cpu_load",
         translation_key="cpu_load",
+        entity_category=EntityCategory.DIAGNOSTIC,
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: _first_number(data.cpu_load),
@@ -154,6 +163,7 @@ SENSORS: tuple[WpsdSensorEntityDescription, ...] = (
     WpsdSensorEntityDescription(
         key="cpu_temp",
         translation_key="cpu_temp",
+        entity_category=EntityCategory.DIAGNOSTIC,
         device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,

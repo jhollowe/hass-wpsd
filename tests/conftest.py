@@ -14,7 +14,7 @@ from custom_components.wpsd.const import DOMAIN
 
 CLIENT = "custom_components.wpsd.client.WpsdClient"
 
-CALLSIGN = "W1AW"
+CALLSIGN = "W4DW"
 
 RADIO_DATA: dict[str, Any] = {
     "radio_status": "IDLE",
