@@ -6,3 +6,41 @@ DOMAIN: Final = "wpsd"
 
 DEFAULT_PORT: Final = 80
 DEFAULT_USERNAME: Final = "pi-star"
+
+# API endpoints
+ENDPOINT_API: Final = "/api/"
+ENDPOINT_HOMEPAGE: Final = "/"
+ENDPOINT_RADIOINFO: Final = "/mmdvmhost/radioinfo.php"
+ENDPOINT_REPEATERINFO: Final = "/mmdvmhost/repeaterinfo.php"
+
+# Mode names as they appear in WPSD
+MODE_D_STAR: Final = "D-Star"
+MODE_DMR: Final = "DMR"
+MODE_YSF: Final = "YSF"
+MODE_P25: Final = "P25"
+MODE_NXDN: Final = "NXDN"
+MODE_POCSAG: Final = "POCSAG"
+MODE_DMR_X_MODE: Final = "DMR X-Mode"
+MODE_YSF_X_MODE: Final = "YSF X-Mode"
+
+ALL_MODES: Final[list[str]] = [
+    MODE_D_STAR,
+    MODE_DMR,
+    MODE_YSF,
+    MODE_P25,
+    MODE_NXDN,
+    MODE_POCSAG,
+]
+
+# Sensor types
+SENSOR_ACTIVE_MODE: Final = "active_mode"
+SENSOR_FIRMWARE: Final = "firmware"
+SENSOR_TX_FREQ: Final = "tx_freq"
+SENSOR_RX_FREQ: Final = "rx_freq"
+SENSOR_CPU_LOAD: Final = "cpu_load"
+SENSOR_CPU_TEMP: Final = "cpu_temp"
+SENSOR_DISK_USAGE: Final = "disk_usage"
+SENSOR_NET_TRAFFIC: Final = "net_traffic"
+
+# Config entry data
+CONF_VERIFY_SSL: Final = "verify_ssl"

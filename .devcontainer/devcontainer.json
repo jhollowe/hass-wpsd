@@ -9,6 +9,13 @@
 			"shellautocompletion": true,
 			"version": "latest"
 		}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"mhutchie.git-graph"
+			]
+		}
 	}
 
 	// Features to add to the dev container. More info: https://containers.dev/features.

@@ -1,12 +1,18 @@
 {
   "domain": "wpsd",
   "name": "WPSD",
-  "codeowners": ["@jhollowe"],
+  "codeowners": [
+    "@jhollowe"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/jhollowe/hass-wpsd",
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/jhollowe/hass-wpsd/issues",
-  "requirements": [],
+  "requirements": [
+    "aiohttp",
+    "async-timeout",
+    "beautifulsoup4"
+  ],
   "version": "0.0.0"
 }

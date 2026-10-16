@@ -10,6 +10,11 @@ Bare minimal requirements:
 - boolean sensor showing which of the modes (e.g. YSF or P.25) are enabled
 - sensor showing which (if any) mode is currently active/in use
 - firmware version
+- TX frequency
+- RX frequency
+- CPU usage
+- disk usage
+- network traffic
 
 Niceties:
 - active connections, including callsigns

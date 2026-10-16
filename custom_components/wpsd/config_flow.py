@@ -2,21 +2,27 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
+import aiohttp
+import async_timeout
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_PORT, CONF_USERNAME
+from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
+from homeassistant.data_entry_flow import AbortFlow
 
-from .const import DEFAULT_PORT, DEFAULT_USERNAME, DOMAIN
+from .client import WpsdClient
+from .const import DEFAULT_PORT, DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_HOST): str,
         vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
-        vol.Required(CONF_USERNAME, default=DEFAULT_USERNAME): str,
-        vol.Required(CONF_PASSWORD): str,
     }
 )
 
@@ -30,11 +36,29 @@ class WpsdConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle the initial step."""
+        errors: dict[str, str] = {}
         if user_input is not None:
-            # TODO: test host and credentials against WPSD once the client exists.
             self._async_abort_entries_match({CONF_HOST: user_input[CONF_HOST]})
-            return self.async_create_entry(
-                title=user_input[CONF_HOST], data=user_input
+
+            session = async_create_clientsession(self.hass)
+            client = WpsdClient(
+                host=user_input[CONF_HOST],
+                port=user_input[CONF_PORT],
+                session=session,
             )
 
-        return self.async_show_form(step_id="user", data_schema=STEP_USER_DATA_SCHEMA)
+            try:
+                await client.async_get_last_heard(limit=1)
+            except (aiohttp.ClientError, async_timeout.TimeoutError, AbortFlow):
+                errors["base"] = "cannot_connect"
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception("Unexpected error")
+                errors["base"] = "unknown"
+            else:
+                return self.async_create_entry(
+                    title=user_input[CONF_HOST], data=user_input
+                )
+
+        return self.async_show_form(
+            step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
+        )

@@ -1,0 +1,94 @@
+"""Binary sensors for WPSD mode enabled states."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+    DataUpdateCoordinator,
+)
+
+from .client import WpsdClient
+from .const import (
+    ALL_MODES,
+    DOMAIN,
+)
+
+_LOGGER = logging.getLogger(__name__)
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up WPSD binary sensors."""
+    client: WpsdClient = hass.data[DOMAIN][entry.entry_id]
+
+    async def async_update_data() -> dict[str, str]:
+        """Fetch mode data from WPSD."""
+        return await client.async_get_modes_enabled()
+
+    coordinator = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name=DOMAIN,
+        update_method=async_update_data,
+        update_interval=__import__("datetime").timedelta(seconds=5),
+    )
+
+    await coordinator.async_config_entry_first_refresh()
+
+    entities = [
+        WpsdModeBinarySensor(coordinator, mode)
+        for mode in ALL_MODES
+    ]
+    async_add_entities(entities)
+
+
+class WpsdModeBinarySensor(CoordinatorEntity, BinarySensorEntity):
+    """Binary sensor for a WPSD mode enabled state."""
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: DataUpdateCoordinator,
+        mode: str,
+    ) -> None:
+        """Initialize the binary sensor."""
+        super().__init__(coordinator)
+        self._mode = mode
+        self._attr_unique_id = f"{DOMAIN}_{mode.lower().replace(' ', '_')}_enabled"
+        self._attr_device_class = BinarySensorDeviceClass.RUNNING
+
+    @property
+    def name(self) -> str:
+        """Return the name of the sensor."""
+        return f"{self._mode} Enabled"
+
+    @property
+    def is_on(self) -> bool:
+        """Return true if the mode is active."""
+        data: dict[str, str] | None = self.coordinator.data
+        if data is None:
+            return False
+        status = data.get(self._mode, "inactive")
+        return status in ("active", "error")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str]:
+        """Return extra state attributes."""
+        data: dict[str, str] | None = self.coordinator.data
+        if data is None:
+            return {}
+        return {"status": data.get(self._mode, "unknown")}
