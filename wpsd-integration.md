@@ -7,16 +7,19 @@ Most of the interfacing to WPSD is in the WPSD-WebCode repo but other WPSD repos
 I would like to do as much as possible without changing any WPSD code. If there turns out to be features which requires WPSD changes, make note of it in TODO.md and we will address it later.
 
 Bare minimal requirements:
+
 - boolean sensor showing which of the modes (e.g. YSF or P.25) are enabled
 - sensor showing which (if any) mode is currently active/in use
 - firmware version
 - TX frequency
 - RX frequency
 - CPU usage
+- CPU temperature
 - disk usage
 - network traffic
 
 Niceties:
+
 - active connections, including callsigns
 - what internet connections are active and which talkgroup is linked
 - boolean showing when we are transmitting
