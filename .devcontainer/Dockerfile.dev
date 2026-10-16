@@ -1,0 +1,53 @@
+# syntax=docker/dockerfile@sha256:2780b5c3bab67f1f76c781860de469442999ed1a0d7992a5efdf2cffc0e3d769
+FROM mcr.microsoft.com/vscode/devcontainers/base:debian
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN \
+    apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        bluez \
+        ffmpeg \
+        libudev-dev \
+        libavformat-dev \
+        libavcodec-dev \
+        libavdevice-dev \
+        libavutil-dev \
+        libswscale-dev \
+        libswresample-dev \
+        libavfilter-dev \
+        libpcap-dev \
+        libturbojpeg0 \
+        libyaml-dev \
+        libxml2 \
+        git \
+        cmake \
+        autoconf \
+        curl \
+        ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+WORKDIR /workspaces/hass-wpsd
+
+# Add go2rtc binary (used by Home Assistant)
+COPY --from=ghcr.io/alexxit/go2rtc:latest /usr/local/bin/go2rtc /bin/go2rtc
+
+USER vscode
+
+ENV VIRTUAL_ENV="/home/vscode/.local/ha-venv"
+ENV UV_PROJECT_ENVIRONMENT=$VIRTUAL_ENV
+RUN --mount=type=bind,source=.python-version,target=.python-version \
+    uv python install \
+    && uv venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Install Home Assistant core
+RUN uv pip install homeassistant
+
+WORKDIR /workspaces
+
+ENV SHELL=/bin/bash

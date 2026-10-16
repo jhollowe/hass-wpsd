@@ -1,0 +1,31 @@
+#!/bin/sh
+# Resolve all dependencies that the application requires to run.
+# Runs every time the container starts.
+
+set -e
+
+cd "$(realpath "$(dirname "$0")/..")"
+
+if [ -z "$VIRTUAL_ENV" ]; then
+  source .venv/bin/activate
+fi
+
+echo "Installing development dependencies..."
+uv pip install \
+  -e . \
+  colorlog \
+  --upgrade \
+  --config-settings editable_mode=compat
+
+# Install dev dependencies from pyproject.toml if available
+if [ -f pyproject.toml ]; then
+  uv pip install \
+    homeassistant \
+    pytest \
+    pytest-asyncio \
+    pytest-homeassistant-custom-component \
+    ruff \
+    --upgrade
+fi
+
+python3 -m script.translations develop --all 2>/dev/null || true

@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Setups the repository for the WPSD integration dev container.
+# Runs once after the container is created.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+# Add default vscode settings if not existing
+mkdir -p .vscode
+SETTINGS_FILE=./.vscode/settings.json
+SETTINGS_TEMPLATE_FILE=./.vscode/settings.default.jsonc
+if [ ! -f "$SETTINGS_FILE" ]; then
+    echo "Copy $SETTINGS_TEMPLATE_FILE to $SETTINGS_FILE."
+    cp "$SETTINGS_TEMPLATE_FILE" "$SETTINGS_FILE"
+fi
+
+mkdir -p config
+
+if [ -z "$VIRTUAL_ENV" ]; then
+  if [ -x "$(command -v uv)" ]; then
+    uv venv .venv
+  else
+    python3 -m venv .venv
+  fi
+  source .venv/bin/activate
+fi
+
+if ! [ -x "$(command -v uv)" ]; then
+  python3 -m pip install uv
+fi
+
+script/bootstrap
+
+# Install Home Assistant if not already installed
+if ! [ -x "$(command -v hass)" ]; then
+  echo "Installing Home Assistant..."
+  uv pip install homeassistant
+fi
+
+# Link the WPSD custom component into Home Assistant's config directory
+CUSTOM_COMPONENTS_DIR=config/custom_components
+mkdir -p "$CUSTOM_COMPONENTS_DIR"
+if [ ! -e "$CUSTOM_COMPONENTS_DIR/wpsd" ]; then
+  echo "Linking WPSD custom component into config/custom_components..."
+  ln -s "$(pwd)/custom_components/wpsd" "$CUSTOM_COMPONENTS_DIR/wpsd"
+fi
+
+# Ensure Home Assistant config exists
+hass --script ensure_config -c config
+
+# Add basic logger config if not present
+if ! grep -R "logger" config/configuration.yaml >> /dev/null; then
+cat >> config/configuration.yaml << 'EOF'
+
+logger:
+  default: info
+  logs:
+    homeassistant.components.wpsd: debug
+EOF
+fi
+
+echo "Setup complete. Run 'script/server' to start Home Assistant."

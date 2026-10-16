@@ -2,34 +2,87 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
 	"name": "WPSD Integration Dev",
-	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/python:3-3.14-trixie",
-	"features": {
-		"ghcr.io/devcontainer-community/devcontainer-features/astral.sh-uv:1": {
-			"shellautocompletion": true,
-			"version": "latest"
-		}
+	"build": {
+		"dockerfile": "Dockerfile.dev",
+		"context": ".."
+	},
+	"runArgs": [
+		"--security-opt",
+		"label=disable"
+	],
+	// Port 8123 is used by Home Assistant
+	"appPort": [
+		"8123:8123"
+	],
+	"postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && script/setup",
+	"postStartCommand": "script/bootstrap",
+	"containerEnv": {
+		"PYTHONASYNCIODEBUG": "1",
+		"EDITOR": "code --wait"
 	},
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"mhutchie.git-graph"
-			]
+				"mhutchie.git-graph",
+				"charliermarsh.ruff",
+				"ms-python.pylint",
+				"ms-python.vscode-pylance",
+				"redhat.vscode-yaml",
+				"esbenp.prettier-vscode",
+				"GitHub.vscode-pull-request-github",
+				"GitHub.copilot"
+			],
+			"settings": {
+				"python.experiments.optOutFrom": [
+					"pythonTestAdapter"
+				],
+				"python.defaultInterpreterPath": "/home/vscode/.local/ha-venv/bin/python",
+				"python.pythonPath": "/home/vscode/.local/ha-venv/bin/python",
+				"python.terminal.activateEnvInCurrentTerminal": true,
+				"python.testing.pytestArgs": [
+					"--no-cov"
+				],
+				"pylint.importStrategy": "fromEnvironment",
+				"python.analysis.typeCheckingMode": "off",
+				"editor.formatOnPaste": false,
+				"editor.formatOnSave": true,
+				"editor.formatOnType": true,
+				"files.trimTrailingWhitespace": true,
+				"terminal.integrated.profiles.linux": {
+					"zsh": {
+						"path": "/usr/bin/zsh"
+					}
+				},
+				"terminal.integrated.defaultProfile.linux": "zsh",
+				"yaml.customTags": [
+					"!input scalar",
+					"!secret scalar",
+					"!include_dir_named scalar",
+					"!include_dir_list scalar",
+					"!include_dir_merge_list scalar",
+					"!include_dir_merge_named scalar"
+				],
+				"[python]": {
+					"editor.defaultFormatter": "charliermarsh.ruff"
+				},
+				"[json]": {
+					"editor.defaultFormatter": "esbenp.prettier-vscode"
+				},
+				"[jsonc]": {
+					"editor.defaultFormatter": "esbenp.prettier-vscode"
+				},
+				"[yaml]": {
+					"editor.defaultFormatter": "esbenp.prettier-vscode"
+				},
+				"json.schemas": [
+					{
+						"fileMatch": [
+							"custom_components/*/manifest.json"
+						],
+						"url": "${workspaceFolder}/script/json_schemas/manifest_schema.json"
+					}
+				]
+			}
 		}
 	}
-
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "pip3 install --user -r requirements.txt",
-
-	// Configure tool-specific properties.
-	// "customizations": {},
-
-	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
 }
