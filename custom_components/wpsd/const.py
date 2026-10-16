@@ -39,7 +39,12 @@ SENSOR_TX_FREQ: Final = "tx_freq"
 SENSOR_RX_FREQ: Final = "rx_freq"
 SENSOR_CPU_LOAD: Final = "cpu_load"
 SENSOR_CPU_TEMP: Final = "cpu_temp"
-SENSOR_DISK_USAGE: Final = "disk_usage"
+SENSOR_DISK_USAGE_ROOT: Final = "disk_usage_root"
+SENSOR_DISK_USED_ROOT: Final = "disk_used_root"
+SENSOR_DISK_TOTAL_ROOT: Final = "disk_total_root"
+SENSOR_DISK_USAGE_VARLOG: Final = "disk_usage_varlog"
+SENSOR_DISK_USED_VARLOG: Final = "disk_used_varlog"
+SENSOR_DISK_TOTAL_VARLOG: Final = "disk_total_varlog"
 SENSOR_NET_TRAFFIC: Final = "net_traffic"
 
 # Config entry data

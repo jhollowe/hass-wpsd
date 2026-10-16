@@ -12,8 +12,13 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfFrequency, UnitOfInformation
+from homeassistant.const import (
+    UnitOfFrequency,
+    UnitOfInformation,
+    UnitOfTemperature,
+)
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -26,7 +31,12 @@ from .const import (
     SENSOR_ACTIVE_MODE,
     SENSOR_CPU_LOAD,
     SENSOR_CPU_TEMP,
-    SENSOR_DISK_USAGE,
+    SENSOR_DISK_TOTAL_ROOT,
+    SENSOR_DISK_TOTAL_VARLOG,
+    SENSOR_DISK_USAGE_ROOT,
+    SENSOR_DISK_USAGE_VARLOG,
+    SENSOR_DISK_USED_ROOT,
+    SENSOR_DISK_USED_VARLOG,
     SENSOR_FIRMWARE,
     SENSOR_NET_TRAFFIC,
     SENSOR_RX_FREQ,
@@ -52,6 +62,58 @@ SENSOR_TYPES: list[dict[str, Any]] = [
         "device_class": None,
         "unit": None,
         "state_class": None,
+    },
+    {
+        "key": SENSOR_DISK_USAGE_ROOT,
+        "name": "Root Disk Usage",
+        "icon": "mdi:harddisk",
+        "device_class": None,
+        "unit": "%",
+        "state_class": SensorStateClass.MEASUREMENT,
+    },
+    {
+        "key": SENSOR_DISK_USED_ROOT,
+        "name": "Root Disk Used",
+        "icon": "mdi:harddisk",
+        "device_class": None,
+        "unit": UnitOfInformation.GIGABYTES,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "entity_registry_enabled_default": False,
+    },
+    {
+        "key": SENSOR_DISK_TOTAL_ROOT,
+        "name": "Root Disk Total",
+        "icon": "mdi:harddisk",
+        "device_class": None,
+        "unit": UnitOfInformation.GIGABYTES,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "entity_registry_enabled_default": False,
+    },
+    {
+        "key": SENSOR_DISK_USAGE_VARLOG,
+        "name": "Var Log Disk Usage",
+        "icon": "mdi:harddisk",
+        "device_class": None,
+        "unit": "%",
+        "state_class": SensorStateClass.MEASUREMENT,
+    },
+    {
+        "key": SENSOR_DISK_USED_VARLOG,
+        "name": "Var Log Disk Used",
+        "icon": "mdi:harddisk",
+        "device_class": None,
+        "unit": UnitOfInformation.GIGABYTES,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "entity_registry_enabled_default": False,
+    },
+    {
+        "key": SENSOR_DISK_TOTAL_VARLOG,
+        "name": "Var Log Disk Total",
+        "icon": "mdi:harddisk",
+        "device_class": None,
+        "unit": UnitOfInformation.GIGABYTES,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "entity_registry_enabled_default": False,
     },
     {
         "key": SENSOR_TX_FREQ,
@@ -82,16 +144,8 @@ SENSOR_TYPES: list[dict[str, Any]] = [
         "name": "CPU Temperature",
         "icon": "mdi:thermometer",
         "device_class": SensorDeviceClass.TEMPERATURE,
-        "unit": None,  # Parsed from HTML like "133°F / 56°C"
+        "unit": UnitOfTemperature.CELSIUS,
         "state_class": SensorStateClass.MEASUREMENT,
-    },
-    {
-        "key": SENSOR_DISK_USAGE,
-        "name": "Disk Usage",
-        "icon": "mdi:harddisk",
-        "device_class": None,
-        "unit": None,  # Parsed from HTML like "4.37 GB / 219.56 GB"
-        "state_class": None,
     },
     {
         "key": SENSOR_NET_TRAFFIC,
@@ -116,22 +170,37 @@ async def async_setup_entry(
         """Fetch data from WPSD."""
         radio_status = await client.async_get_radio_status()
         firmware = await client.async_get_firmware()
+        dashboard_version = await client.async_get_dashboard_version()
         tx_freq = await client.async_get_tx_freq()
         rx_freq = await client.async_get_rx_freq()
         cpu_load = await client.async_get_cpu_load()
         cpu_temp = await client.async_get_cpu_temp()
-        disk_usage = await client.async_get_disk_usage()
+        disk_root = await client.async_get_disk_usage_root()
+        disk_varlog = await client.async_get_disk_usage_varlog()
         net_traffic = await client.async_get_net_traffic()
-        return {
+
+        data: dict[str, Any] = {
             SENSOR_ACTIVE_MODE: radio_status,
             SENSOR_FIRMWARE: firmware,
+            "dashboard_version": dashboard_version,
             SENSOR_TX_FREQ: tx_freq,
             SENSOR_RX_FREQ: rx_freq,
             SENSOR_CPU_LOAD: cpu_load,
             SENSOR_CPU_TEMP: cpu_temp,
-            SENSOR_DISK_USAGE: disk_usage,
             SENSOR_NET_TRAFFIC: net_traffic,
         }
+
+        if disk_root:
+            data[SENSOR_DISK_USAGE_ROOT] = disk_root.get("percent")
+            data[SENSOR_DISK_USED_ROOT] = disk_root.get("used_gb")
+            data[SENSOR_DISK_TOTAL_ROOT] = disk_root.get("total_gb")
+
+        if disk_varlog:
+            data[SENSOR_DISK_USAGE_VARLOG] = disk_varlog.get("percent")
+            data[SENSOR_DISK_USED_VARLOG] = disk_varlog.get("used_gb")
+            data[SENSOR_DISK_TOTAL_VARLOG] = disk_varlog.get("total_gb")
+
+        return data
 
     coordinator = DataUpdateCoordinator(
         hass,
@@ -143,9 +212,7 @@ async def async_setup_entry(
 
     await coordinator.async_config_entry_first_refresh()
 
-    entities = [
-        WpsdSensor(coordinator, sensor_def) for sensor_def in SENSOR_TYPES
-    ]
+    entities = [WpsdSensor(coordinator, sensor_def) for sensor_def in SENSOR_TYPES]
     async_add_entities(entities)
 
 
@@ -168,6 +235,22 @@ class WpsdSensor(CoordinatorEntity, SensorEntity):
         self._attr_device_class = sensor_def.get("device_class")
         self._attr_native_unit_of_measurement = sensor_def.get("unit")
         self._attr_state_class = sensor_def.get("state_class")
+        self._attr_entity_registry_enabled_default = sensor_def.get(
+            "entity_registry_enabled_default", True
+        )
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device information for this sensor."""
+        data: dict[str, Any] | None = self.coordinator.data
+        version = data.get("dashboard_version") if data else None
+        return DeviceInfo(
+            identifiers={(DOMAIN, "wpsd_device")},
+            name="WPSD",
+            manufacturer="WPSD",
+            model="WPSD Hotspot",
+            sw_version=version,
+        )
 
     @property
     def native_value(self) -> str | None:
@@ -175,4 +258,38 @@ class WpsdSensor(CoordinatorEntity, SensorEntity):
         data: dict[str, Any] | None = self.coordinator.data
         if data is None:
             return None
-        return data.get(self._sensor_def["key"])
+        value = data.get(self._sensor_def["key"])
+        if value is None:
+            return None
+
+        key = self._sensor_def["key"]
+
+        # Parse numeric values for measurement sensors
+        if key == SENSOR_TX_FREQ or key == SENSOR_RX_FREQ:
+            # Value like "440.525 MHz" -> return float
+            import re
+
+            match = re.search(r"([\d.]+)", value)
+            if match:
+                return float(match.group(1))
+            return None
+
+        if key == SENSOR_CPU_TEMP:
+            # Value like "135°F / 57°C" -> extract Celsius value
+            import re
+
+            match = re.search(r"([\d.]+)°C", value)
+            if match:
+                return float(match.group(1))
+            return None
+
+        if key == SENSOR_CPU_LOAD:
+            # Value like "38%" -> return float
+            import re
+
+            match = re.search(r"([\d.]+)", value)
+            if match:
+                return float(match.group(1))
+            return None
+
+        return value

@@ -8,11 +8,10 @@ from typing import Any
 import aiohttp
 import async_timeout
 import voluptuous as vol
-
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_HOST, CONF_PORT
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.data_entry_flow import AbortFlow
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .client import WpsdClient
 from .const import DEFAULT_PORT, DOMAIN
@@ -49,7 +48,7 @@ class WpsdConfigFlow(ConfigFlow, domain=DOMAIN):
 
             try:
                 await client.async_get_last_heard(limit=1)
-            except (aiohttp.ClientError, async_timeout.TimeoutError, AbortFlow):
+            except aiohttp.ClientError, async_timeout.TimeoutError, AbortFlow:
                 errors["base"] = "cannot_connect"
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Unexpected error")

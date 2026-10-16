@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -11,6 +10,7 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -48,10 +48,7 @@ async def async_setup_entry(
 
     await coordinator.async_config_entry_first_refresh()
 
-    entities = [
-        WpsdModeBinarySensor(coordinator, mode)
-        for mode in ALL_MODES
-    ]
+    entities = [WpsdModeBinarySensor(coordinator, mode) for mode in ALL_MODES]
     async_add_entities(entities)
 
 
@@ -70,6 +67,16 @@ class WpsdModeBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._mode = mode
         self._attr_unique_id = f"{DOMAIN}_{mode.lower().replace(' ', '_')}_enabled"
         self._attr_device_class = BinarySensorDeviceClass.RUNNING
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device information for this binary sensor."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, "wpsd_device")},
+            name="WPSD",
+            manufacturer="WPSD",
+            model="WPSD Hotspot",
+        )
 
     @property
     def name(self) -> str:

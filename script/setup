@@ -39,6 +39,7 @@ fi
 if [ -x "$(command -v pre-commit)" ]; then
   echo "Installing pre-commit hooks..."
   pre-commit install
+  pre-commit install-hooks
 else
   echo "pre-commit not found, no hooks installed"
 fi

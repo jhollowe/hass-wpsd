@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 
@@ -45,7 +44,7 @@ class WpsdClient:
                 async with session.get(f"{self._base_url}{endpoint}") as resp:
                     resp.raise_for_status()
                     return await resp.json()
-        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+        except (TimeoutError, aiohttp.ClientError) as err:
             _LOGGER.error("Error fetching %s: %s", endpoint, err)
             raise
         finally:
@@ -61,7 +60,7 @@ class WpsdClient:
                 async with session.get(f"{self._base_url}{endpoint}") as resp:
                     resp.raise_for_status()
                     return await resp.text()
-        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+        except (TimeoutError, aiohttp.ClientError) as err:
             _LOGGER.error("Error fetching %s: %s", endpoint, err)
             raise
         finally:
@@ -94,6 +93,21 @@ class WpsdClient:
         """Get the WPSD dashboard homepage HTML."""
         return await self._async_get_text(ENDPOINT_HOMEPAGE)
 
+    async def async_get_dashboard_version(self) -> str | None:
+        """Get the WPSD dashboard version from homepage HTML."""
+        html = await self._async_get_text(ENDPOINT_HOMEPAGE)
+        return self._parse_dashboard_version(html)
+
+    async def async_get_disk_usage_root(self) -> dict[str, float | None] | None:
+        """Get root disk usage stats from homepage HTML."""
+        html = await self._async_get_text(ENDPOINT_HOMEPAGE)
+        return self._parse_disk_usage_stats(html, "/")
+
+    async def async_get_disk_usage_varlog(self) -> dict[str, float | None] | None:
+        """Get /var/log disk usage stats from homepage HTML."""
+        html = await self._async_get_text(ENDPOINT_HOMEPAGE)
+        return self._parse_disk_usage_stats(html, "/var/log")
+
     async def async_get_tx_freq(self) -> str | None:
         """Get the TX frequency from radioinfo.php."""
         html = await self._async_get_text(ENDPOINT_RADIOINFO)
@@ -113,11 +127,6 @@ class WpsdClient:
         """Get the CPU temperature from the homepage."""
         html = await self._async_get_text(ENDPOINT_HOMEPAGE)
         return self._parse_cpu_temp(html)
-
-    async def async_get_disk_usage(self) -> str | None:
-        """Get the disk usage from the homepage."""
-        html = await self._async_get_text(ENDPOINT_HOMEPAGE)
-        return self._parse_disk_usage(html)
 
     async def async_get_net_traffic(self) -> str | None:
         """Get the network traffic from the homepage."""
@@ -144,8 +153,7 @@ class WpsdClient:
         modes: dict[str, str] = {}
         for pill in soup.select("div.status-pill"):
             classes = pill.get("class", [])
-            status = next((c for c in classes if c !=
-                          "status-pill"), "unknown")
+            status = next((c for c in classes if c != "status-pill"), "unknown")
             span = pill.find("span")
             if span:
                 mode = span.get_text(strip=True)
@@ -182,8 +190,7 @@ class WpsdClient:
         """Parse the RX frequency from radioinfo.php HTML."""
         soup = BeautifulSoup(html, "html.parser")
         cells = soup.select("div.divTableCell.cell_content.middle.noMob")
-        freq_cells = [c.get_text(strip=True)
-                      for c in cells if "MHz" in c.get_text()]
+        freq_cells = [c.get_text(strip=True) for c in cells if "MHz" in c.get_text()]
         if len(freq_cells) >= 2:
             return freq_cells[1]
         return None
@@ -219,15 +226,72 @@ class WpsdClient:
         return None
 
     @staticmethod
-    def _parse_disk_usage(html: str) -> str | None:
-        """Parse the disk usage from homepage HTML."""
+    def _parse_dashboard_version(html: str) -> str | None:
+        """Parse the WPSD dashboard version from homepage HTML.
+
+        Looks for text like "WPSD Dashboard Ver.# 1.2.3" in the page.
+        """
+        import re
+
+        match = re.search(r"WPSD Dashboard Ver\.#\s*([\d.]+)", html)
+        if match:
+            return match.group(1)
+        return None
+
+    @staticmethod
+    def _parse_disk_usage_stats(
+        html: str, mount: str
+    ) -> dict[str, float | None] | None:
+        """Parse disk usage stats for a given mount point from homepage HTML.
+
+        Returns a dict with keys: 'percent', 'used_gb', 'total_gb'.
+        """
         soup = BeautifulSoup(html, "html.parser")
         for card in soup.select("div.stat-card"):
             label = card.select_one("span.stat-label")
             if label and "Disk Usage" in label.get_text():
                 value = card.select_one("div.stat-value")
                 if value:
-                    return value.get_text(strip=True)
+                    anchor = value.find("a")
+                    if anchor:
+                        # Get the main text (e.g. "4.37 GB / 219.56 GB")
+                        # The anchor's first text node is the main value
+                        main_text = ""
+                        for content in anchor.contents:
+                            if isinstance(content, str):
+                                main_text = content.strip()
+                                break
+                        if not main_text:
+                            main_text = (
+                                anchor.get_text(strip=True).split("Used:")[0].strip()
+                            )
+
+                        # Parse "X GB / Y GB" or "X MB / Y MB" etc.
+                        import re
+
+                        match = re.search(
+                            r"([\d.]+)\s*(\w+)\s*/\s*([\d.]+)\s*(\w+)", main_text
+                        )
+                        if match:
+                            used_val = float(match.group(1))
+                            used_unit = match.group(2)
+                            total_val = float(match.group(3))
+                            total_unit = match.group(4)
+
+                            # Convert to GB
+                            used_gb = _convert_to_gb(used_val, used_unit)
+                            total_gb = _convert_to_gb(total_val, total_unit)
+                            percent = (
+                                round((used_gb / total_gb) * 100, 2)
+                                if total_gb > 0
+                                else None
+                            )
+
+                            return {
+                                "percent": percent,
+                                "used_gb": used_gb,
+                                "total_gb": total_gb,
+                            }
         return None
 
     @staticmethod
@@ -241,3 +305,17 @@ class WpsdClient:
                 if value:
                     return value.get_text(strip=True)
         return None
+
+
+def _convert_to_gb(value: float, unit: str) -> float:
+    """Convert a size value to GB."""
+    unit = unit.upper()
+    multipliers = {
+        "B": 1 / (1024**3),
+        "KB": 1 / (1024**2),
+        "MB": 1 / 1024,
+        "GB": 1,
+        "TB": 1024,
+        "PB": 1024**2,
+    }
+    return value * multipliers.get(unit, 1)
