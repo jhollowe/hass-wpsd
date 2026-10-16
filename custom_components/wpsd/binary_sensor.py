@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -34,9 +35,10 @@ async def async_setup_entry(
     """Set up WPSD binary sensors."""
     client: WpsdClient = hass.data[DOMAIN][entry.entry_id]
 
-    async def async_update_data() -> dict[str, str]:
-        """Fetch mode data from WPSD."""
-        return await client.async_get_modes_enabled()
+    async def async_update_data() -> dict[str, Any]:
+        """Fetch mode data and network status from WPSD."""
+        modes, networks = await client.async_get_modes_with_network()
+        return {"modes": modes, "networks": networks}
 
     coordinator = DataUpdateCoordinator(
         hass,
@@ -86,16 +88,24 @@ class WpsdModeBinarySensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return true if the mode is active."""
-        data: dict[str, str] | None = self.coordinator.data
+        data: dict[str, Any] | None = self.coordinator.data
         if data is None:
             return False
-        status = data.get(self._mode, "inactive")
+        modes = data.get("modes", {})
+        status = modes.get(self._mode, "inactive")
         return status in ("active", "error")
 
     @property
     def extra_state_attributes(self) -> dict[str, str]:
         """Return extra state attributes."""
-        data: dict[str, str] | None = self.coordinator.data
+        data: dict[str, Any] | None = self.coordinator.data
         if data is None:
             return {}
-        return {"status": data.get(self._mode, "unknown")}
+        modes = data.get("modes", {})
+        networks = data.get("networks", {})
+        attrs: dict[str, str] = {"status": modes.get(self._mode, "unknown")}
+        # Add network status as attribute for each mode
+        network_name = f"{self._mode} Net"
+        if network_name in networks:
+            attrs["network_status"] = networks[network_name]
+        return attrs

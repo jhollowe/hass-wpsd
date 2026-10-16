@@ -186,6 +186,38 @@ class WpsdClient:
         return modes
 
     @staticmethod
+    def _parse_network_status(html: str) -> dict[str, str]:
+        """Parse network status pills from repeaterinfo.php HTML.
+
+        Returns a dict mapping network name (e.g. "D-Star Net") to status:
+        active, paused, error, inactive.
+        """
+        soup = BeautifulSoup(html, "html.parser")
+        networks: dict[str, str] = {}
+        for pill in soup.select("div.status-pill"):
+            classes = pill.get("class", [])
+            status = next((c for c in classes if c != "status-pill"), "unknown")
+            span = pill.find("span")
+            if span:
+                name = span.get_text(strip=True)
+                if name.endswith(" Net"):
+                    networks[name] = status
+        return networks
+
+    async def async_get_modes_with_network(
+        self,
+    ) -> tuple[dict[str, str], dict[str, str]]:
+        """Get mode enabled states and network status from repeaterinfo.php.
+
+        Fetches repeaterinfo.php once and returns both mode states and
+        network statuses.
+
+        Returns a tuple of (modes_dict, networks_dict).
+        """
+        html = await self._async_get_text(ENDPOINT_REPEATERINFO)
+        return self._parse_modes_enabled(html), self._parse_network_status(html)
+
+    @staticmethod
     def _parse_firmware(html: str) -> str | None:
         """Parse the modem firmware version from radioinfo.php HTML.
 
