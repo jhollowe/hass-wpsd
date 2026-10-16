@@ -78,10 +78,10 @@
           "network_status": {
             "name": "Network status",
             "state": {
-              "active": "Active",
-              "inactive": "Inactive",
-              "error": "Error",
-              "paused": "Paused"
+              "active": "[%key:component::wpsd::entity::sensor::d_star::state::active%]",
+              "inactive": "[%key:component::wpsd::entity::sensor::d_star::state::inactive%]",
+              "error": "[%key:component::wpsd::entity::sensor::d_star::state::error%]",
+              "paused": "[%key:component::wpsd::entity::sensor::d_star::state::paused%]"
             }
           }
         }
@@ -89,19 +89,19 @@
       "dmr": {
         "name": "DMR",
         "state": {
-          "active": "Active",
-          "inactive": "Inactive",
-          "error": "Error",
-          "paused": "Paused"
+          "active": "[%key:component::wpsd::entity::sensor::d_star::state::active%]",
+          "inactive": "[%key:component::wpsd::entity::sensor::d_star::state::inactive%]",
+          "error": "[%key:component::wpsd::entity::sensor::d_star::state::error%]",
+          "paused": "[%key:component::wpsd::entity::sensor::d_star::state::paused%]"
         },
         "state_attributes": {
           "network_status": {
             "name": "Network status",
             "state": {
-              "active": "Active",
-              "inactive": "Inactive",
-              "error": "Error",
-              "paused": "Paused"
+              "active": "[%key:component::wpsd::entity::sensor::dmr::state::active%]",
+              "inactive": "[%key:component::wpsd::entity::sensor::dmr::state::inactive%]",
+              "error": "[%key:component::wpsd::entity::sensor::dmr::state::error%]",
+              "paused": "[%key:component::wpsd::entity::sensor::dmr::state::paused%]"
             }
           }
         }
@@ -109,19 +109,19 @@
       "ysf": {
         "name": "YSF",
         "state": {
-          "active": "Active",
-          "inactive": "Inactive",
-          "error": "Error",
-          "paused": "Paused"
+          "active": "[%key:component::wpsd::entity::sensor::d_star::state::active%]",
+          "inactive": "[%key:component::wpsd::entity::sensor::d_star::state::inactive%]",
+          "error": "[%key:component::wpsd::entity::sensor::d_star::state::error%]",
+          "paused": "[%key:component::wpsd::entity::sensor::d_star::state::paused%]"
         },
         "state_attributes": {
           "network_status": {
             "name": "Network status",
             "state": {
-              "active": "Active",
-              "inactive": "Inactive",
-              "error": "Error",
-              "paused": "Paused"
+              "active": "[%key:component::wpsd::entity::sensor::ysf::state::active%]",
+              "inactive": "[%key:component::wpsd::entity::sensor::ysf::state::inactive%]",
+              "error": "[%key:component::wpsd::entity::sensor::ysf::state::error%]",
+              "paused": "[%key:component::wpsd::entity::sensor::ysf::state::paused%]"
             }
           }
         }
@@ -129,19 +129,19 @@
       "p25": {
         "name": "P25",
         "state": {
-          "active": "Active",
-          "inactive": "Inactive",
-          "error": "Error",
-          "paused": "Paused"
+          "active": "[%key:component::wpsd::entity::sensor::d_star::state::active%]",
+          "inactive": "[%key:component::wpsd::entity::sensor::d_star::state::inactive%]",
+          "error": "[%key:component::wpsd::entity::sensor::d_star::state::error%]",
+          "paused": "[%key:component::wpsd::entity::sensor::d_star::state::paused%]"
         },
         "state_attributes": {
           "network_status": {
             "name": "Network status",
             "state": {
-              "active": "Active",
-              "inactive": "Inactive",
-              "error": "Error",
-              "paused": "Paused"
+              "active": "[%key:component::wpsd::entity::sensor::p25::state::active%]",
+              "inactive": "[%key:component::wpsd::entity::sensor::p25::state::inactive%]",
+              "error": "[%key:component::wpsd::entity::sensor::p25::state::error%]",
+              "paused": "[%key:component::wpsd::entity::sensor::p25::state::paused%]"
             }
           }
         }
@@ -149,19 +149,19 @@
       "nxdn": {
         "name": "NXDN",
         "state": {
-          "active": "Active",
-          "inactive": "Inactive",
-          "error": "Error",
-          "paused": "Paused"
+          "active": "[%key:component::wpsd::entity::sensor::d_star::state::active%]",
+          "inactive": "[%key:component::wpsd::entity::sensor::d_star::state::inactive%]",
+          "error": "[%key:component::wpsd::entity::sensor::d_star::state::error%]",
+          "paused": "[%key:component::wpsd::entity::sensor::d_star::state::paused%]"
         },
         "state_attributes": {
           "network_status": {
             "name": "Network status",
             "state": {
-              "active": "Active",
-              "inactive": "Inactive",
-              "error": "Error",
-              "paused": "Paused"
+              "active": "[%key:component::wpsd::entity::sensor::nxdn::state::active%]",
+              "inactive": "[%key:component::wpsd::entity::sensor::nxdn::state::inactive%]",
+              "error": "[%key:component::wpsd::entity::sensor::nxdn::state::error%]",
+              "paused": "[%key:component::wpsd::entity::sensor::nxdn::state::paused%]"
             }
           }
         }
@@ -169,19 +169,19 @@
       "pocsag": {
         "name": "POCSAG",
         "state": {
-          "active": "Active",
-          "inactive": "Inactive",
-          "error": "Error",
-          "paused": "Paused"
+          "active": "[%key:component::wpsd::entity::sensor::d_star::state::active%]",
+          "inactive": "[%key:component::wpsd::entity::sensor::d_star::state::inactive%]",
+          "error": "[%key:component::wpsd::entity::sensor::d_star::state::error%]",
+          "paused": "[%key:component::wpsd::entity::sensor::d_star::state::paused%]"
         },
         "state_attributes": {
           "network_status": {
             "name": "Network status",
             "state": {
-              "active": "Active",
-              "inactive": "Inactive",
-              "error": "Error",
-              "paused": "Paused"
+              "active": "[%key:component::wpsd::entity::sensor::pocsag::state::active%]",
+              "inactive": "[%key:component::wpsd::entity::sensor::pocsag::state::inactive%]",
+              "error": "[%key:component::wpsd::entity::sensor::pocsag::state::error%]",
+              "paused": "[%key:component::wpsd::entity::sensor::pocsag::state::paused%]"
             }
           }
         }

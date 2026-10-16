@@ -32,6 +32,6 @@ jobs:
         # The integration's own requirements come from manifest.json
         run: |
           uv venv
-          uv pip install --group dev beautifulsoup4 async-timeout
+          uv pip install --group dev "beautifulsoup4>=4.13.3"
       - name: Run tests
-        run: uv run --no-sync python -m pytest
+        run: uv run --no-sync python -m pytest --cov --cov-report=term-missing --cov-fail-under=95

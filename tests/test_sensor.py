@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from datetime import timedelta
 
+import aiohttp
 import pytest
-from homeassistant.const import STATE_UNKNOWN
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
@@ -299,3 +300,25 @@ async def test_slower_per_device_interval_is_respected(
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=125))
     await hass.async_block_till_done(wait_background_tasks=True)
     assert polls.await_count == 2
+
+
+async def test_entities_unavailable_when_polling_fails_then_recover(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry, mock_wpsd
+) -> None:
+    await setup_entry(hass, mock_config_entry)
+    cpu = entity_id(hass, mock_config_entry, "cpu_load")
+    dmr = entity_id(hass, mock_config_entry, "dmr_status")
+
+    mock_wpsd["async_get_homepage_data"].side_effect = aiohttp.ClientError()
+    mock_wpsd["async_get_modes_with_network"].side_effect = TimeoutError()
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=31))
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert hass.states.get(cpu).state == STATE_UNAVAILABLE
+    assert hass.states.get(dmr).state == STATE_UNAVAILABLE
+
+    mock_wpsd["async_get_homepage_data"].side_effect = None
+    mock_wpsd["async_get_modes_with_network"].side_effect = None
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=62))
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert hass.states.get(cpu).state == "38.0"
+    assert hass.states.get(dmr).state == "active"
