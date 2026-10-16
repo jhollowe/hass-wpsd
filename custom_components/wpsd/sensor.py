@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from datetime import timedelta
 from typing import Any
 
@@ -28,6 +29,10 @@ from homeassistant.helpers.update_coordinator import (
 
 from .client import WpsdClient
 from .const import (
+    ALL_MODES,
+    CONF_MODE_SCAN_INTERVAL,
+    DEFAULT_MODE_SCAN_INTERVAL,
+    MODE_STATES,
     CONF_SYSTEM_SCAN_INTERVAL,
     DEFAULT_SYSTEM_SCAN_INTERVAL,
     DOMAIN,
@@ -196,7 +201,33 @@ async def async_setup_entry(
 
     await coordinator.async_config_entry_first_refresh()
 
-    entities = [WpsdSensor(coordinator, sensor_def, client.callsign) for sensor_def in SENSOR_TYPES]
+    entities: list[SensorEntity] = [
+        WpsdSensor(coordinator, sensor_def, client.callsign)
+        for sensor_def in SENSOR_TYPES
+    ]
+
+    async def async_update_mode_data() -> dict[str, Any]:
+        """Fetch mode and network status from WPSD."""
+        modes, networks = await client.async_get_modes_with_network()
+        return {"modes": modes, "networks": networks}
+
+    mode_coordinator = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name=f"{DOMAIN}_modes",
+        update_method=async_update_mode_data,
+        update_interval=timedelta(
+            seconds=entry.options.get(
+                CONF_MODE_SCAN_INTERVAL, DEFAULT_MODE_SCAN_INTERVAL
+            )
+        ),
+    )
+    await mode_coordinator.async_config_entry_first_refresh()
+
+    entities.extend(
+        WpsdModeStatusSensor(mode_coordinator, mode, client.callsign)
+        for mode in ALL_MODES
+    )
     async_add_entities(entities)
 
 
@@ -280,3 +311,57 @@ class WpsdSensor(CoordinatorEntity, SensorEntity):
             return None
 
         return value
+
+
+class WpsdModeStatusSensor(CoordinatorEntity, SensorEntity):
+    """Status of a WPSD mode (active, inactive, error or paused).
+
+    The mode's network status is exposed as an attribute.
+    """
+
+    _attr_has_entity_name = True
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = MODE_STATES
+
+    def __init__(
+        self,
+        coordinator: DataUpdateCoordinator,
+        mode: str,
+        device_name: str | None = None,
+    ) -> None:
+        """Initialize the mode status sensor."""
+        super().__init__(coordinator)
+        self._callsign = device_name
+        self._mode = mode
+        slug = re.sub(r"\W+", "_", mode.lower())
+        self._attr_unique_id = f"{DOMAIN}_{slug}_status"
+        self._attr_translation_key = slug
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device information for this sensor."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, "wpsd_device")},
+            translation_key="hotspot" if self._callsign else "hotspot_unknown",
+            translation_placeholders={"callsign": self._callsign or ""},
+            manufacturer="WPSD",
+            model="WPSD Hotspot",
+        )
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the mode status, or None if WPSD reports an unrecognised one."""
+        data: dict[str, Any] | None = self.coordinator.data
+        if data is None:
+            return None
+        status = data.get("modes", {}).get(self._mode)
+        return status if status in MODE_STATES else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str]:
+        """Return the mode's network status, if WPSD reports one."""
+        data: dict[str, Any] | None = self.coordinator.data
+        if data is None:
+            return {}
+        network_status = data.get("networks", {}).get(f"{self._mode} Net")
+        return {"network_status": network_status} if network_status else {}

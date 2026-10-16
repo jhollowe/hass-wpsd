@@ -65,72 +65,124 @@
       },
       "cpu_temp": {
         "name": "CPU Temperature"
-      }
-    },
-    "binary_sensor": {
+      },
       "d_star": {
         "name": "D-Star",
+        "state": {
+          "active": "Active",
+          "inactive": "Inactive",
+          "error": "Error",
+          "paused": "Paused"
+        },
         "state_attributes": {
-          "status": {
-            "name": "Status"
-          },
           "network_status": {
-            "name": "Network status"
+            "name": "Network status",
+            "state": {
+              "active": "Active",
+              "inactive": "Inactive",
+              "error": "Error",
+              "paused": "Paused"
+            }
           }
         }
       },
       "dmr": {
         "name": "DMR",
+        "state": {
+          "active": "Active",
+          "inactive": "Inactive",
+          "error": "Error",
+          "paused": "Paused"
+        },
         "state_attributes": {
-          "status": {
-            "name": "Status"
-          },
           "network_status": {
-            "name": "Network status"
+            "name": "Network status",
+            "state": {
+              "active": "Active",
+              "inactive": "Inactive",
+              "error": "Error",
+              "paused": "Paused"
+            }
           }
         }
       },
       "ysf": {
         "name": "YSF",
+        "state": {
+          "active": "Active",
+          "inactive": "Inactive",
+          "error": "Error",
+          "paused": "Paused"
+        },
         "state_attributes": {
-          "status": {
-            "name": "Status"
-          },
           "network_status": {
-            "name": "Network status"
+            "name": "Network status",
+            "state": {
+              "active": "Active",
+              "inactive": "Inactive",
+              "error": "Error",
+              "paused": "Paused"
+            }
           }
         }
       },
       "p25": {
         "name": "P25",
+        "state": {
+          "active": "Active",
+          "inactive": "Inactive",
+          "error": "Error",
+          "paused": "Paused"
+        },
         "state_attributes": {
-          "status": {
-            "name": "Status"
-          },
           "network_status": {
-            "name": "Network status"
+            "name": "Network status",
+            "state": {
+              "active": "Active",
+              "inactive": "Inactive",
+              "error": "Error",
+              "paused": "Paused"
+            }
           }
         }
       },
       "nxdn": {
         "name": "NXDN",
+        "state": {
+          "active": "Active",
+          "inactive": "Inactive",
+          "error": "Error",
+          "paused": "Paused"
+        },
         "state_attributes": {
-          "status": {
-            "name": "Status"
-          },
           "network_status": {
-            "name": "Network status"
+            "name": "Network status",
+            "state": {
+              "active": "Active",
+              "inactive": "Inactive",
+              "error": "Error",
+              "paused": "Paused"
+            }
           }
         }
       },
       "pocsag": {
         "name": "POCSAG",
+        "state": {
+          "active": "Active",
+          "inactive": "Inactive",
+          "error": "Error",
+          "paused": "Paused"
+        },
         "state_attributes": {
-          "status": {
-            "name": "Status"
-          },
           "network_status": {
-            "name": "Network status"
+            "name": "Network status",
+            "state": {
+              "active": "Active",
+              "inactive": "Inactive",
+              "error": "Error",
+              "paused": "Paused"
+            }
           }
         }
       }

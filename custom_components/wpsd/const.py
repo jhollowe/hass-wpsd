@@ -32,6 +32,18 @@ ALL_MODES: Final[list[str]] = [
     MODE_POCSAG,
 ]
 
+# Mode/network status values rendered by WPSD (status-pill CSS classes)
+MODE_STATE_ACTIVE: Final = "active"
+MODE_STATE_INACTIVE: Final = "inactive"
+MODE_STATE_ERROR: Final = "error"
+MODE_STATE_PAUSED: Final = "paused"
+MODE_STATES: Final[list[str]] = [
+    MODE_STATE_ACTIVE,
+    MODE_STATE_INACTIVE,
+    MODE_STATE_ERROR,
+    MODE_STATE_PAUSED,
+]
+
 # Sensor types
 SENSOR_ACTIVE_MODE: Final = "active_mode"
 SENSOR_FIRMWARE: Final = "firmware"
