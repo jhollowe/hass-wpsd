@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import re
-from datetime import timedelta
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -27,15 +25,12 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
-from .client import WpsdClient
+from . import WpsdData
+
 from .const import (
     ALL_MODES,
-    CONF_MODE_SCAN_INTERVAL,
-    DEFAULT_MODE_SCAN_INTERVAL,
-    MODE_STATES,
-    CONF_SYSTEM_SCAN_INTERVAL,
-    DEFAULT_SYSTEM_SCAN_INTERVAL,
     DOMAIN,
+    MODE_STATES,
     SENSOR_ACTIVE_MODE,
     SENSOR_CPU_LOAD,
     SENSOR_CPU_TEMP,
@@ -152,80 +147,15 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up WPSD sensors."""
-    client: WpsdClient = hass.data[DOMAIN][entry.entry_id]
-
-    async def async_update_data() -> dict[str, Any]:
-        """Fetch data from WPSD."""
-        # Fetch each unique endpoint once, concurrently, to avoid repeated
-        # sequential HTTP requests that make setup take over 10 seconds.
-        radio_data, homepage_data = await asyncio.gather(
-            client.async_get_radio_data(),
-            client.async_get_homepage_data(),
-        )
-
-        data: dict[str, Any] = {
-            SENSOR_ACTIVE_MODE: radio_data["radio_status"],
-            SENSOR_FIRMWARE: radio_data["firmware"],
-            "dashboard_version": homepage_data["dashboard_version"],
-            SENSOR_TX_FREQ: radio_data["tx_freq"],
-            SENSOR_RX_FREQ: radio_data["rx_freq"],
-            SENSOR_CPU_LOAD: homepage_data["cpu_load"],
-            SENSOR_CPU_TEMP: homepage_data["cpu_temp"],
-        }
-
-        disk_root = homepage_data["disk_root"]
-        if disk_root:
-            data[SENSOR_DISK_USAGE_ROOT] = disk_root.get("percent")
-            data[SENSOR_DISK_USED_ROOT] = disk_root.get("used_gb")
-            data[SENSOR_DISK_TOTAL_ROOT] = disk_root.get("total_gb")
-
-        disk_varlog = homepage_data["disk_varlog"]
-        if disk_varlog:
-            data[SENSOR_DISK_USAGE_VARLOG] = disk_varlog.get("percent")
-            data[SENSOR_DISK_USED_VARLOG] = disk_varlog.get("used_gb")
-            data[SENSOR_DISK_TOTAL_VARLOG] = disk_varlog.get("total_gb")
-
-        return data
-
-    coordinator = DataUpdateCoordinator(
-        hass,
-        _LOGGER,
-        name=DOMAIN,
-        update_method=async_update_data,
-        update_interval=timedelta(
-            seconds=entry.options.get(
-                CONF_SYSTEM_SCAN_INTERVAL, DEFAULT_SYSTEM_SCAN_INTERVAL
-            )
-        ),
-    )
-
-    await coordinator.async_config_entry_first_refresh()
+    data: WpsdData = hass.data[DOMAIN][entry.entry_id]
+    callsign = data.client.callsign
 
     entities: list[SensorEntity] = [
-        WpsdSensor(coordinator, sensor_def, entry.entry_id, client.callsign)
+        WpsdSensor(data.system_coordinator, sensor_def, entry.entry_id, callsign)
         for sensor_def in SENSOR_TYPES
     ]
-
-    async def async_update_mode_data() -> dict[str, Any]:
-        """Fetch mode and network status from WPSD."""
-        modes, networks = await client.async_get_modes_with_network()
-        return {"modes": modes, "networks": networks}
-
-    mode_coordinator = DataUpdateCoordinator(
-        hass,
-        _LOGGER,
-        name=f"{DOMAIN}_modes",
-        update_method=async_update_mode_data,
-        update_interval=timedelta(
-            seconds=entry.options.get(
-                CONF_MODE_SCAN_INTERVAL, DEFAULT_MODE_SCAN_INTERVAL
-            )
-        ),
-    )
-    await mode_coordinator.async_config_entry_first_refresh()
-
     entities.extend(
-        WpsdModeStatusSensor(mode_coordinator, mode, entry.entry_id, client.callsign)
+        WpsdModeStatusSensor(data.mode_coordinator, mode, entry.entry_id, callsign)
         for mode in ALL_MODES
     )
     async_add_entities(entities)

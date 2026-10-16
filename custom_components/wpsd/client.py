@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 import aiohttp
@@ -278,8 +279,6 @@ class WpsdClient:
                 if value:
                     text = value.get_text(strip=True)
                     # Extract the percentage (e.g. "38%" -> "38")
-                    import re
-
                     match = re.search(r"(\d+)%", text)
                     if match:
                         return match.group(1)
@@ -331,55 +330,48 @@ class WpsdClient:
     ) -> dict[str, float | None] | None:
         """Parse disk usage stats for a given mount point from homepage HTML.
 
+        The "Disk Usage" card shows the root filesystem as "<used> / <total>".
+        Its tooltip lists /var/log as "<strong>/var/log (tmpfs):</strong>
+        <used> / <total> (...)".
+
         Returns a dict with keys: 'percent', 'used_gb', 'total_gb'.
         """
         soup = BeautifulSoup(html, "html.parser")
         for card in soup.select("div.stat-card"):
             label = card.select_one("span.stat-label")
-            if label and "Disk Usage" in label.get_text():
-                value = card.select_one("div.stat-value")
-                if value:
-                    anchor = value.find("a")
-                    if anchor:
-                        # Get the main text (e.g. "4.37 GB / 219.56 GB")
-                        # The anchor's first text node is the main value
-                        main_text = ""
-                        for content in anchor.contents:
-                            if isinstance(content, str):
-                                main_text = content.strip()
-                                break
-                        if not main_text:
-                            main_text = (
-                                anchor.get_text(strip=True).split("Used:")[0].strip()
-                            )
+            if not label or "Disk Usage" not in label.get_text():
+                continue
+            anchor = card.select_one("div.stat-value a")
+            if anchor is None:
+                continue
 
-                        # Parse "X GB / Y GB" or "X MB / Y MB" etc.
-                        import re
+            if mount == "/":
+                # The anchor's first text node is the main value
+                text = next(
+                    (c.strip() for c in anchor.contents if isinstance(c, str)), ""
+                )
+            else:
+                text = ""
+                for strong in anchor.find_all("strong"):
+                    if strong.get_text(strip=True).startswith(mount):
+                        sibling = strong.next_sibling
+                        text = sibling.strip() if isinstance(sibling, str) else ""
+                        break
 
-                        match = re.search(
-                            r"([\d.]+)\s*(\w+)\s*/\s*([\d.]+)\s*(\w+)", main_text
-                        )
-                        if match:
-                            used_val = float(match.group(1))
-                            used_unit = match.group(2)
-                            total_val = float(match.group(3))
-                            total_unit = match.group(4)
-
-                            # Convert to GB
-                            used_gb = _convert_to_gb(used_val, used_unit)
-                            total_gb = _convert_to_gb(total_val, total_unit)
-                            percent = (
-                                round((used_gb / total_gb) * 100, 2)
-                                if total_gb > 0
-                                else None
-                            )
-
-                            return {
-                                "percent": percent,
-                                "used_gb": used_gb,
-                                "total_gb": total_gb,
-                            }
+            match = _SIZE_PAIR.search(text)
+            if not match:
+                return None
+            used_gb = _convert_to_gb(float(match.group(1)), match.group(2))
+            total_gb = _convert_to_gb(float(match.group(3)), match.group(4))
+            return {
+                "percent": round(used_gb / total_gb * 100, 2) if total_gb > 0 else None,
+                "used_gb": used_gb,
+                "total_gb": total_gb,
+            }
         return None
+
+
+_SIZE_PAIR = re.compile(r"([\d.]+)\s*(\w+)\s*/\s*([\d.]+)\s*(\w+)")
 
 
 def _convert_to_gb(value: float, unit: str) -> float:

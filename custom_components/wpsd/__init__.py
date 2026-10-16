@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 
 import aiohttp
 from homeassistant.config_entries import ConfigEntry
@@ -12,9 +13,21 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .client import WpsdClient
+from .coordinator import WpsdModeCoordinator, WpsdSystemCoordinator
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
+
+
+
+@dataclass
+class WpsdData:
+    """Runtime data shared by the platforms of one config entry."""
+
+    client: WpsdClient
+    system_coordinator: WpsdSystemCoordinator
+    mode_coordinator: WpsdModeCoordinator
+
 
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,
@@ -39,7 +52,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             translation_placeholders={"error": str(err)},
         ) from err
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = client
+    system_coordinator = WpsdSystemCoordinator(hass, entry, client)
+    mode_coordinator = WpsdModeCoordinator(hass, entry, client)
+    # Refreshing here, before the platforms are forwarded, lets a failure raise
+    # ConfigEntryNotReady so Home Assistant retries the setup.
+    await system_coordinator.async_config_entry_first_refresh()
+    await mode_coordinator.async_config_entry_first_refresh()
+
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = WpsdData(
+        client, system_coordinator, mode_coordinator
+    )
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
