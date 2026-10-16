@@ -137,7 +137,7 @@ class WpsdClient:
         soup = BeautifulSoup(html, "html.parser")
         modes: dict[str, str] = {}
         for pill in soup.select("div.status-pill"):
-            classes = pill.get("class", [])
+            classes = pill.get_attribute_list("class")
             status = next((c for c in classes if c != "status-pill"), "unknown")
             span = pill.find("span")
             if span:
@@ -156,7 +156,7 @@ class WpsdClient:
         soup = BeautifulSoup(html, "html.parser")
         networks: dict[str, str] = {}
         for pill in soup.select("div.status-pill"):
-            classes = pill.get("class", [])
+            classes = pill.get_attribute_list("class")
             status = next((c for c in classes if c != "status-pill"), "inactive")
             span = pill.find("span")
             if span:

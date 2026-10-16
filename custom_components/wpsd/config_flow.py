@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import aiohttp
-import voluptuous as vol
+import probatio
 from homeassistant.config_entries import (
     ConfigFlow,
     ConfigFlowResult,
@@ -30,10 +30,10 @@ from .const import (
 )
 from .coordinator import WpsdConfigEntry
 
-STEP_USER_DATA_SCHEMA = vol.Schema(
+STEP_USER_DATA_SCHEMA = probatio.Schema(
     {
-        vol.Required(CONF_HOST): str,
-        vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
+        probatio.Required(CONF_HOST): str,
+        probatio.Required(CONF_PORT, default=DEFAULT_PORT): int,
     }
 )
 
@@ -117,19 +117,20 @@ class WpsdOptionsFlow(OptionsFlowWithReload):
         if user_input is not None:
             return self.async_create_entry(data=user_input)
 
-        interval = vol.All(
-            vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL)
+        interval = probatio.All(
+            probatio.Coerce(int),
+            probatio.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
         )
         options = self.config_entry.options
-        schema = vol.Schema(
+        schema = probatio.Schema(
             {
-                vol.Required(
+                probatio.Required(
                     CONF_MODE_SCAN_INTERVAL,
                     default=options.get(
                         CONF_MODE_SCAN_INTERVAL, DEFAULT_MODE_SCAN_INTERVAL
                     ),
                 ): interval,
-                vol.Required(
+                probatio.Required(
                     CONF_SYSTEM_SCAN_INTERVAL,
                     default=options.get(
                         CONF_SYSTEM_SCAN_INTERVAL, DEFAULT_SYSTEM_SCAN_INTERVAL
