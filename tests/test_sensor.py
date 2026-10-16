@@ -94,6 +94,7 @@ async def test_disk_size_sensors_disabled_by_default(
     ("key", "value"),
     [
         ("tx_freq", "no number here"),
+        ("tx_freq", "1.2.3 MHz"),
         ("cpu_load", "n/a"),
     ],
 )
@@ -111,12 +112,16 @@ async def test_unparseable_numeric_value_is_unknown(
     assert state.state == STATE_UNKNOWN
 
 
+@pytest.mark.parametrize("cpu_temp", ["135°F", "..°C"])
 async def test_cpu_temp_without_celsius_is_unknown(
-    hass: HomeAssistant, mock_config_entry: MockConfigEntry, mock_wpsd
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_wpsd,
+    cpu_temp: str,
 ) -> None:
     mock_wpsd["async_get_homepage_data"].return_value = {
         **HOMEPAGE_DATA,
-        "cpu_temp": "135°F",
+        "cpu_temp": cpu_temp,
     }
     await setup_entry(hass, mock_config_entry)
     state = hass.states.get(entity_id(hass, mock_config_entry, "cpu_temp"))

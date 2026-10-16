@@ -6,7 +6,7 @@ rules:
   appropriate-polling: done
   brands: done
   common-modules: done
-  config-flow-test-coverage: todo
+  config-flow-test-coverage: done
   config-flow: done
   dependency-transparency: done
   docs-actions:
@@ -44,7 +44,7 @@ rules:
   reauthentication-flow:
     status: exempt
     comment: The dashboard is read without authentication.
-  test-coverage: todo
+  test-coverage: done
   # Gold
   devices: done
   diagnostics: done
