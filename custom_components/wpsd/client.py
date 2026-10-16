@@ -192,15 +192,24 @@ class WpsdClient:
         Returns a dict mapping network name (e.g. "D-Star Net") to status:
         active, paused, error, inactive.
         """
+        VALID_STATUSES = {"active", "paused", "error", "inactive"}
         soup = BeautifulSoup(html, "html.parser")
         networks: dict[str, str] = {}
         for pill in soup.select("div.status-pill"):
             classes = pill.get("class", [])
-            status = next((c for c in classes if c != "status-pill"), "unknown")
+            status = next((c for c in classes if c != "status-pill"), "inactive")
             span = pill.find("span")
             if span:
                 name = span.get_text(strip=True)
                 if name.endswith(" Net"):
+                    if status not in VALID_STATUSES:
+                        _LOGGER.warning(
+                            "Invalid network status '%s' for '%s', "
+                            "defaulting to 'inactive'",
+                            status,
+                            name,
+                        )
+                        status = "inactive"
                     networks[name] = status
         return networks
 
