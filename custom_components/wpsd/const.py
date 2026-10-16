@@ -48,3 +48,11 @@ SENSOR_DISK_TOTAL_VARLOG: Final = "disk_total_varlog"
 
 # Config entry data
 CONF_VERIFY_SSL: Final = "verify_ssl"
+
+# Options (polling intervals, in seconds)
+CONF_MODE_SCAN_INTERVAL: Final = "mode_scan_interval"
+CONF_SYSTEM_SCAN_INTERVAL: Final = "system_scan_interval"
+DEFAULT_MODE_SCAN_INTERVAL: Final = 5
+DEFAULT_SYSTEM_SCAN_INTERVAL: Final = 30
+MIN_SCAN_INTERVAL: Final = 1
+MAX_SCAN_INTERVAL: Final = 3600

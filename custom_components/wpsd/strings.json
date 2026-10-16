@@ -16,5 +16,16 @@
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
       "unknown": "[%key:common::config_flow::error::unknown%]"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "WPSD polling",
+        "data": {
+          "mode_scan_interval": "Mode status polling interval (seconds)",
+          "system_scan_interval": "System stats polling interval (seconds)"
+        }
+      }
+    }
   }
 }

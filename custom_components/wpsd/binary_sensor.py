@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 from typing import Any
 
 from homeassistant.components.binary_sensor import (
@@ -21,6 +22,8 @@ from homeassistant.helpers.update_coordinator import (
 from .client import WpsdClient
 from .const import (
     ALL_MODES,
+    CONF_MODE_SCAN_INTERVAL,
+    DEFAULT_MODE_SCAN_INTERVAL,
     DOMAIN,
 )
 
@@ -45,7 +48,11 @@ async def async_setup_entry(
         _LOGGER,
         name=DOMAIN,
         update_method=async_update_data,
-        update_interval=__import__("datetime").timedelta(seconds=5),
+        update_interval=timedelta(
+            seconds=entry.options.get(
+                CONF_MODE_SCAN_INTERVAL, DEFAULT_MODE_SCAN_INTERVAL
+            )
+        ),
     )
 
     await coordinator.async_config_entry_first_refresh()
