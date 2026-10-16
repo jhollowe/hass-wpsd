@@ -1,88 +1,74 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
-	"name": "WPSD Integration Dev",
-	"build": {
-		"dockerfile": "Dockerfile.dev",
-		"context": ".."
-	},
-	"runArgs": [
-		"--security-opt",
-		"label=disable"
-	],
-	// Port 8123 is used by Home Assistant
-	"appPort": [
-		"8123:8123"
-	],
-	"postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && script/setup",
-	"postStartCommand": "script/bootstrap",
-	"containerEnv": {
-		"PYTHONASYNCIODEBUG": "1",
-		"EDITOR": "code --wait"
-	},
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"mhutchie.git-graph",
-				"charliermarsh.ruff",
-				"ms-python.pylint",
-				"ms-python.vscode-pylance",
-				"redhat.vscode-yaml",
-				"esbenp.prettier-vscode",
-				"GitHub.vscode-pull-request-github",
-				"GitHub.copilot"
-			],
-			"settings": {
-				"python.experiments.optOutFrom": [
-					"pythonTestAdapter"
-				],
-				"python.defaultInterpreterPath": "/home/vscode/.local/ha-venv/bin/python",
-				"python.pythonPath": "/home/vscode/.local/ha-venv/bin/python",
-				"python.terminal.activateEnvInCurrentTerminal": true,
-				"python.testing.pytestArgs": [
-					"--no-cov"
-				],
-				"pylint.importStrategy": "fromEnvironment",
-				"python.analysis.typeCheckingMode": "off",
-				"editor.formatOnPaste": false,
-				"editor.formatOnSave": true,
-				"editor.formatOnType": true,
-				"files.trimTrailingWhitespace": true,
-				"terminal.integrated.profiles.linux": {
-					"zsh": {
-						"path": "/usr/bin/zsh"
-					}
-				},
-				"terminal.integrated.defaultProfile.linux": "zsh",
-				"yaml.customTags": [
-					"!input scalar",
-					"!secret scalar",
-					"!include_dir_named scalar",
-					"!include_dir_list scalar",
-					"!include_dir_merge_list scalar",
-					"!include_dir_merge_named scalar"
-				],
-				"[python]": {
-					"editor.defaultFormatter": "charliermarsh.ruff"
-				},
-				"[json]": {
-					"editor.defaultFormatter": "esbenp.prettier-vscode"
-				},
-				"[jsonc]": {
-					"editor.defaultFormatter": "esbenp.prettier-vscode"
-				},
-				"[yaml]": {
-					"editor.defaultFormatter": "esbenp.prettier-vscode"
-				},
-				"json.schemas": [
-					{
-						"fileMatch": [
-							"custom_components/*/manifest.json"
-						],
-						"url": "${workspaceFolder}/script/json_schemas/manifest_schema.json"
-					}
-				]
-			}
-		}
-	}
+  "name": "WPSD Integration Dev",
+  "build": {
+    "dockerfile": "Dockerfile.dev",
+    "context": ".."
+  },
+  // Port 8123 is used by Home Assistant
+  "appPort": ["8123:8123"],
+  "postCreateCommand": "script/setup",
+  "postStartCommand": "script/bootstrap",
+  "containerEnv": {
+    "PYTHONASYNCIODEBUG": "1",
+    "EDITOR": "code --wait"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "charliermarsh.ruff",
+        "esbenp.prettier-vscode",
+        "mhutchie.git-graph",
+        "ms-python.pylint",
+        "ms-python.vscode-pylance",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "python.experiments.optOutFrom": ["pythonTestAdapter"],
+        "python.defaultInterpreterPath": "/home/vscode/.local/ha-venv/bin/python",
+        "python.pythonPath": "/home/vscode/.local/ha-venv/bin/python",
+        "python.terminal.activateEnvInCurrentTerminal": true,
+        "python.testing.pytestArgs": ["--no-cov"],
+        "pylint.importStrategy": "fromEnvironment",
+        "python.analysis.typeCheckingMode": "off",
+        "editor.formatOnPaste": false,
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+        "files.trimTrailingWhitespace": true,
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/usr/bin/zsh"
+          }
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "yaml.customTags": [
+          "!input scalar",
+          "!secret scalar",
+          "!include_dir_named scalar",
+          "!include_dir_list scalar",
+          "!include_dir_merge_list scalar",
+          "!include_dir_merge_named scalar"
+        ],
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff"
+        },
+        "[json]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[jsonc]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[yaml]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "json.schemas": [
+          {
+            "fileMatch": ["custom_components/*/manifest.json"],
+            "url": "${workspaceFolder}/script/json_schemas/manifest_schema.json" // TODO fix this to point to the real schema
+          }
+        ]
+      }
+    }
+  }
 }
