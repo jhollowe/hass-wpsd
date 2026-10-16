@@ -47,11 +47,11 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-# Sensor definitions: (key, name, icon, device_class, unit, state_class)
+# Sensor definitions: (key, icon, device_class, unit, state_class)
+# Names come from translations (entity.sensor.<key>.name)
 SENSOR_TYPES: list[dict[str, Any]] = [
     {
         "key": SENSOR_ACTIVE_MODE,
-        "name": "Active Mode",
         "icon": "mdi:radio",
         "device_class": SensorDeviceClass.ENUM,
         "unit": None,
@@ -59,7 +59,6 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_FIRMWARE,
-        "name": "Modem Firmware Version",
         "icon": "mdi:information",
         "device_class": None,
         "unit": None,
@@ -67,7 +66,6 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_DISK_USAGE_ROOT,
-        "name": "/ Disk Usage",
         "icon": "mdi:harddisk",
         "device_class": None,
         "unit": "%",
@@ -75,7 +73,6 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_DISK_USED_ROOT,
-        "name": "/ Disk Used",
         "icon": "mdi:harddisk",
         "device_class": None,
         "unit": UnitOfInformation.GIGABYTES,
@@ -84,7 +81,6 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_DISK_TOTAL_ROOT,
-        "name": "/ Disk Total",
         "icon": "mdi:harddisk",
         "device_class": None,
         "unit": UnitOfInformation.GIGABYTES,
@@ -93,7 +89,6 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_DISK_USAGE_VARLOG,
-        "name": "/var/log Disk Usage",
         "icon": "mdi:harddisk",
         "device_class": None,
         "unit": "%",
@@ -101,7 +96,6 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_DISK_USED_VARLOG,
-        "name": "/var/log Disk Used",
         "icon": "mdi:harddisk",
         "device_class": None,
         "unit": UnitOfInformation.GIGABYTES,
@@ -110,7 +104,6 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_DISK_TOTAL_VARLOG,
-        "name": "/var/log Disk Total",
         "icon": "mdi:harddisk",
         "device_class": None,
         "unit": UnitOfInformation.GIGABYTES,
@@ -119,7 +112,6 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_TX_FREQ,
-        "name": "TX Frequency",
         "icon": "mdi:radio-tower",
         "device_class": SensorDeviceClass.FREQUENCY,
         "unit": UnitOfFrequency.MEGAHERTZ,
@@ -127,7 +119,6 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_RX_FREQ,
-        "name": "RX Frequency",
         "icon": "mdi:radio-tower",
         "device_class": SensorDeviceClass.FREQUENCY,
         "unit": UnitOfFrequency.MEGAHERTZ,
@@ -135,7 +126,6 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_CPU_LOAD,
-        "name": "CPU Load",
         "icon": "mdi:cpu-monitor",
         "device_class": None,
         "unit": "%",
@@ -143,7 +133,6 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_CPU_TEMP,
-        "name": "CPU Temperature",
         "icon": "mdi:thermometer",
         "device_class": SensorDeviceClass.TEMPERATURE,
         "unit": UnitOfTemperature.CELSIUS,
@@ -224,10 +213,10 @@ class WpsdSensor(CoordinatorEntity, SensorEntity):
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
-        self._device_name = device_name or "WPSD"
+        self._callsign = device_name
         self._sensor_def = sensor_def
         self._attr_unique_id = f"{DOMAIN}_{sensor_def['key']}"
-        self._attr_name = sensor_def["name"]
+        self._attr_translation_key = sensor_def["key"]
         self._attr_icon = sensor_def.get("icon")
         self._attr_device_class = sensor_def.get("device_class")
         self._attr_native_unit_of_measurement = sensor_def.get("unit")
@@ -243,7 +232,8 @@ class WpsdSensor(CoordinatorEntity, SensorEntity):
         version = data.get("dashboard_version") if data else None
         return DeviceInfo(
             identifiers={(DOMAIN, "wpsd_device")},
-            name=self._device_name,
+            translation_key="hotspot" if self._callsign else "hotspot_unknown",
+            translation_placeholders={"callsign": self._callsign or ""},
             manufacturer="WPSD",
             model="WPSD Hotspot",
             sw_version=version,

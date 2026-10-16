@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import timedelta
 from typing import Any
 
@@ -74,9 +75,10 @@ class WpsdModeBinarySensor(CoordinatorEntity, BinarySensorEntity):
     ) -> None:
         """Initialize the binary sensor."""
         super().__init__(coordinator)
-        self._device_name = device_name or "WPSD"
+        self._callsign = device_name
         self._mode = mode
-        self._attr_unique_id = f"{DOMAIN}_{mode.lower().replace(' ', '_')}_enabled"
+        self._attr_unique_id = f"{DOMAIN}_{mode.lower().replace(' ', '_')}_status"
+        self._attr_translation_key = re.sub(r"\W+", "_", mode.lower())
         self._attr_device_class = BinarySensorDeviceClass.RUNNING
 
     @property
@@ -84,15 +86,11 @@ class WpsdModeBinarySensor(CoordinatorEntity, BinarySensorEntity):
         """Return device information for this binary sensor."""
         return DeviceInfo(
             identifiers={(DOMAIN, "wpsd_device")},
-            name=self._device_name,
+            translation_key="hotspot" if self._callsign else "hotspot_unknown",
+            translation_placeholders={"callsign": self._callsign or ""},
             manufacturer="WPSD",
             model="WPSD Hotspot",
         )
-
-    @property
-    def name(self) -> str:
-        """Return the name of the sensor."""
-        return self._mode
 
     @property
     def is_on(self) -> bool:

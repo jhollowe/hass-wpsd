@@ -27,5 +27,126 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "active_mode": {
+        "name": "Active Mode"
+      },
+      "firmware": {
+        "name": "Modem Firmware Version"
+      },
+      "disk_usage_root": {
+        "name": "/ Disk Usage"
+      },
+      "disk_used_root": {
+        "name": "/ Disk Used"
+      },
+      "disk_total_root": {
+        "name": "/ Disk Total"
+      },
+      "disk_usage_varlog": {
+        "name": "/var/log Disk Usage"
+      },
+      "disk_used_varlog": {
+        "name": "/var/log Disk Used"
+      },
+      "disk_total_varlog": {
+        "name": "/var/log Disk Total"
+      },
+      "tx_freq": {
+        "name": "TX Frequency"
+      },
+      "rx_freq": {
+        "name": "RX Frequency"
+      },
+      "cpu_load": {
+        "name": "CPU Load"
+      },
+      "cpu_temp": {
+        "name": "CPU Temperature"
+      }
+    },
+    "binary_sensor": {
+      "d_star": {
+        "name": "D-Star",
+        "state_attributes": {
+          "status": {
+            "name": "Status"
+          },
+          "network_status": {
+            "name": "Network status"
+          }
+        }
+      },
+      "dmr": {
+        "name": "DMR",
+        "state_attributes": {
+          "status": {
+            "name": "Status"
+          },
+          "network_status": {
+            "name": "Network status"
+          }
+        }
+      },
+      "ysf": {
+        "name": "YSF",
+        "state_attributes": {
+          "status": {
+            "name": "Status"
+          },
+          "network_status": {
+            "name": "Network status"
+          }
+        }
+      },
+      "p25": {
+        "name": "P25",
+        "state_attributes": {
+          "status": {
+            "name": "Status"
+          },
+          "network_status": {
+            "name": "Network status"
+          }
+        }
+      },
+      "nxdn": {
+        "name": "NXDN",
+        "state_attributes": {
+          "status": {
+            "name": "Status"
+          },
+          "network_status": {
+            "name": "Network status"
+          }
+        }
+      },
+      "pocsag": {
+        "name": "POCSAG",
+        "state_attributes": {
+          "status": {
+            "name": "Status"
+          },
+          "network_status": {
+            "name": "Network status"
+          }
+        }
+      }
+    }
+  },
+  "device": {
+    "hotspot": {
+      "name": "{callsign}"
+    },
+    "hotspot_unknown": {
+      "name": "WPSD"
+    }
+  },
+  "exceptions": {
+    "cannot_connect": {
+      "message": "Unable to reach WPSD: {error}"
+    }
   }
 }

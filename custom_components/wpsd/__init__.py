@@ -34,7 +34,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         client.callsign = await client.async_get_callsign()
     except (TimeoutError, aiohttp.ClientError) as err:
-        raise ConfigEntryNotReady(f"Unable to reach WPSD: {err}") from err
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN,
+            translation_key="cannot_connect",
+            translation_placeholders={"error": str(err)},
+        ) from err
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = client
 
