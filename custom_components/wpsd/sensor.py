@@ -39,7 +39,6 @@ from .const import (
     SENSOR_DISK_USED_ROOT,
     SENSOR_DISK_USED_VARLOG,
     SENSOR_FIRMWARE,
-    SENSOR_NET_TRAFFIC,
     SENSOR_RX_FREQ,
     SENSOR_TX_FREQ,
 )
@@ -148,14 +147,6 @@ SENSOR_TYPES: list[dict[str, Any]] = [
         "unit": UnitOfTemperature.CELSIUS,
         "state_class": SensorStateClass.MEASUREMENT,
     },
-    # {
-    #     "key": SENSOR_NET_TRAFFIC,
-    #     "name": "Network Traffic",
-    #     "icon": "mdi:network",
-    #     "device_class": None,
-    #     "unit": None,  # Parsed from HTML like "50.63MiB ↓ | 54.54MiB ↑"
-    #     "state_class": None,
-    # },
 ]
 
 
@@ -184,7 +175,6 @@ async def async_setup_entry(
             SENSOR_RX_FREQ: radio_data["rx_freq"],
             SENSOR_CPU_LOAD: homepage_data["cpu_load"],
             SENSOR_CPU_TEMP: homepage_data["cpu_temp"],
-            SENSOR_NET_TRAFFIC: homepage_data["net_traffic"],
         }
 
         disk_root = homepage_data["disk_root"]

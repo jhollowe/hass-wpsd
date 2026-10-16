@@ -45,7 +45,6 @@ SENSOR_DISK_TOTAL_ROOT: Final = "disk_total_root"
 SENSOR_DISK_USAGE_VARLOG: Final = "disk_usage_varlog"
 SENSOR_DISK_USED_VARLOG: Final = "disk_used_varlog"
 SENSOR_DISK_TOTAL_VARLOG: Final = "disk_total_varlog"
-SENSOR_NET_TRAFFIC: Final = "net_traffic"
 
 # Config entry data
 CONF_VERIFY_SSL: Final = "verify_ssl"

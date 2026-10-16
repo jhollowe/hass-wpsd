@@ -110,7 +110,7 @@ class WpsdClient:
         """Fetch the homepage once and return all parsed dashboard data.
 
         Returns a dict with keys: dashboard_version, cpu_load, cpu_temp,
-        net_traffic, disk_root, disk_varlog.
+        disk_root, disk_varlog.
         """
         html = await self._async_get_text(ENDPOINT_HOMEPAGE)
         disk_root = self._parse_disk_usage_stats(html, "/")
@@ -119,7 +119,6 @@ class WpsdClient:
             "dashboard_version": self._parse_dashboard_version(html),
             "cpu_load": self._parse_cpu_load(html),
             "cpu_temp": self._parse_cpu_temp(html),
-            "net_traffic": self._parse_net_traffic(html),
             "disk_root": disk_root,
             "disk_varlog": disk_varlog,
         }
@@ -158,11 +157,6 @@ class WpsdClient:
         """Get the CPU temperature from the homepage."""
         html = await self._async_get_text(ENDPOINT_HOMEPAGE)
         return self._parse_cpu_temp(html)
-
-    async def async_get_net_traffic(self) -> str | None:
-        """Get the network traffic from the homepage."""
-        html = await self._async_get_text(ENDPOINT_HOMEPAGE)
-        return self._parse_net_traffic(html)
 
     @staticmethod
     def _parse_radio_status(html: str) -> str:
@@ -323,18 +317,6 @@ class WpsdClient:
                                 "used_gb": used_gb,
                                 "total_gb": total_gb,
                             }
-        return None
-
-    @staticmethod
-    def _parse_net_traffic(html: str) -> str | None:
-        """Parse the network traffic from homepage HTML."""
-        soup = BeautifulSoup(html, "html.parser")
-        for card in soup.select("div.stat-card"):
-            label = card.select_one("span.stat-label")
-            if label and "Net Traffic" in label.get_text():
-                value = card.select_one("div.stat-value")
-                if value:
-                    return value.get_text(strip=True)
         return None
 
 
