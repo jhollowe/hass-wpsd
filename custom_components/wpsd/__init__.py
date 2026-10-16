@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import logging
 
+import aiohttp
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .client import WpsdClient
@@ -28,6 +30,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         port=entry.data[CONF_PORT],
         session=session,
     )
+
+    try:
+        client.callsign = await client.async_get_callsign()
+    except (TimeoutError, aiohttp.ClientError) as err:
+        raise ConfigEntryNotReady(f"Unable to reach WPSD: {err}") from err
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = client
 

@@ -207,7 +207,7 @@ async def async_setup_entry(
 
     await coordinator.async_config_entry_first_refresh()
 
-    entities = [WpsdSensor(coordinator, sensor_def) for sensor_def in SENSOR_TYPES]
+    entities = [WpsdSensor(coordinator, sensor_def, client.callsign) for sensor_def in SENSOR_TYPES]
     async_add_entities(entities)
 
 
@@ -220,9 +220,11 @@ class WpsdSensor(CoordinatorEntity, SensorEntity):
         self,
         coordinator: DataUpdateCoordinator,
         sensor_def: dict[str, Any],
+        device_name: str | None = None,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
+        self._device_name = device_name or "WPSD"
         self._sensor_def = sensor_def
         self._attr_unique_id = f"{DOMAIN}_{sensor_def['key']}"
         self._attr_name = sensor_def["name"]
@@ -241,7 +243,7 @@ class WpsdSensor(CoordinatorEntity, SensorEntity):
         version = data.get("dashboard_version") if data else None
         return DeviceInfo(
             identifiers={(DOMAIN, "wpsd_device")},
-            name="WPSD",
+            name=self._device_name,
             manufacturer="WPSD",
             model="WPSD Hotspot",
             sw_version=version,

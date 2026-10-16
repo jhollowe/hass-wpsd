@@ -34,6 +34,7 @@ class WpsdClient:
         self._port = port
         self._session = session
         self._base_url = f"http://{host}:{port}"
+        self.callsign: str | None = None
 
     async def _async_get_json(self, endpoint: str) -> Any:
         """Fetch JSON from an endpoint."""
@@ -122,6 +123,11 @@ class WpsdClient:
             "disk_root": disk_root,
             "disk_varlog": disk_varlog,
         }
+
+    async def async_get_callsign(self) -> str | None:
+        """Get the hotspot callsign from the homepage title."""
+        html = await self._async_get_text(ENDPOINT_HOMEPAGE)
+        return self._parse_callsign(html)
 
     async def async_get_dashboard_version(self) -> str | None:
         """Get the WPSD dashboard version from homepage HTML."""
@@ -290,6 +296,18 @@ class WpsdClient:
                 if value:
                     return value.get_text(strip=True)
         return None
+
+    @staticmethod
+    def _parse_callsign(html: str) -> str | None:
+        """Parse the callsign from the homepage title.
+
+        The title has the form "<CALLSIGN> - Dashboard".
+        """
+        title = BeautifulSoup(html, "html.parser").title
+        if title is None:
+            return None
+        callsign = title.get_text().split(" - ", 1)[0].strip()
+        return callsign or None
 
     @staticmethod
     def _parse_dashboard_version(html: str) -> str | None:

@@ -27,7 +27,6 @@ Features that cannot be done without modifying WPSD. None are blocking; see `res
 - implement adding talkgroup/TS1/TS2/etc data as attributes on the mode sensors
 - remove "enabled" from sensor names
 - make sure mode sensors can support active, inactive, error, and paused as states
-- make the device name default be the callsign (pulled from the homepage title)
 - test with more active repeater(s):
   - w0jrw.hopto.org
   - rpt.k0rq.com

@@ -57,7 +57,7 @@ async def async_setup_entry(
 
     await coordinator.async_config_entry_first_refresh()
 
-    entities = [WpsdModeBinarySensor(coordinator, mode) for mode in ALL_MODES]
+    entities = [WpsdModeBinarySensor(coordinator, mode, client.callsign) for mode in ALL_MODES]
     async_add_entities(entities)
 
 
@@ -70,9 +70,11 @@ class WpsdModeBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self,
         coordinator: DataUpdateCoordinator,
         mode: str,
+        device_name: str | None = None,
     ) -> None:
         """Initialize the binary sensor."""
         super().__init__(coordinator)
+        self._device_name = device_name or "WPSD"
         self._mode = mode
         self._attr_unique_id = f"{DOMAIN}_{mode.lower().replace(' ', '_')}_enabled"
         self._attr_device_class = BinarySensorDeviceClass.RUNNING
@@ -82,7 +84,7 @@ class WpsdModeBinarySensor(CoordinatorEntity, BinarySensorEntity):
         """Return device information for this binary sensor."""
         return DeviceInfo(
             identifiers={(DOMAIN, "wpsd_device")},
-            name="WPSD",
+            name=self._device_name,
             manufacturer="WPSD",
             model="WPSD Hotspot",
         )
