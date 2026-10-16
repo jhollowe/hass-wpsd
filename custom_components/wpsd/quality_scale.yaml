@@ -79,3 +79,7 @@ rules:
   stale-devices:
     status: exempt
     comment: Each config entry is a single fixed hotspot device.
+  # Platinum
+  async-dependency: todo
+  inject-websession: done
+  strict-typing: todo

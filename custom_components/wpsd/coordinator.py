@@ -6,14 +6,13 @@ import asyncio
 from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any
 
 import aiohttp
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .client import WpsdClient
+from .client import DiskUsage, WpsdClient
 from .const import (
     CONF_MODE_SCAN_INTERVAL,
     CONF_SYSTEM_SCAN_INTERVAL,
@@ -37,8 +36,8 @@ class WpsdSystemData:
     rx_freq: str | None
     cpu_load: str | None
     cpu_temp: str | None
-    disk_root: dict[str, float | None] | None
-    disk_varlog: dict[str, float | None] | None
+    disk_root: DiskUsage | None
+    disk_varlog: DiskUsage | None
 
 
 @dataclass
@@ -110,8 +109,6 @@ class WpsdSystemCoordinator(WpsdCoordinator[WpsdSystemData]):
 
     async def _async_fetch(self) -> WpsdSystemData:
         """Fetch each page once, concurrently."""
-        radio_data: dict[str, Any]
-        homepage_data: dict[str, Any]
         radio_data, homepage_data = await asyncio.gather(
             self.client.async_get_radio_data(),
             self.client.async_get_homepage_data(),

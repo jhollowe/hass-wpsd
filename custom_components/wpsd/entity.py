@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -9,7 +11,7 @@ from .const import DOMAIN
 from .coordinator import WpsdCoordinator
 
 
-class WpsdEntity[_CoordinatorT: WpsdCoordinator](CoordinatorEntity[_CoordinatorT]):
+class WpsdEntity[_CoordinatorT: WpsdCoordinator[Any]](CoordinatorEntity[_CoordinatorT]):
     """Base entity attached to the hotspot's device."""
 
     _attr_has_entity_name = True

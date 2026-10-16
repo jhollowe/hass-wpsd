@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import re
-from typing import Any
+from typing import Any, TypedDict
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -19,6 +19,33 @@ from .const import (
 )
 
 REQUEST_TIMEOUT = 10
+
+
+class DiskUsage(TypedDict):
+    """Usage of one filesystem, as shown on the dashboard."""
+
+    percent: float | None
+    used_gb: float
+    total_gb: float
+
+
+class RadioData(TypedDict):
+    """Values parsed from radioinfo.php."""
+
+    radio_status: str
+    firmware: str | None
+    tx_freq: str | None
+    rx_freq: str | None
+
+
+class HomepageData(TypedDict):
+    """Values parsed from the dashboard homepage."""
+
+    dashboard_version: str | None
+    cpu_load: str | None
+    cpu_temp: str | None
+    disk_root: DiskUsage | None
+    disk_varlog: DiskUsage | None
 
 
 class WpsdClient:
@@ -56,7 +83,7 @@ class WpsdClient:
         )
         return data if isinstance(data, list) else []
 
-    async def async_get_radio_data(self) -> dict[str, Any]:
+    async def async_get_radio_data(self) -> RadioData:
         """Fetch radioinfo.php once and return all parsed radio data.
 
         Returns a dict with keys: radio_status, firmware, tx_freq, rx_freq.
@@ -69,7 +96,7 @@ class WpsdClient:
             "rx_freq": self._parse_rx_freq(html),
         }
 
-    async def async_get_homepage_data(self) -> dict[str, Any]:
+    async def async_get_homepage_data(self) -> HomepageData:
         """Fetch the homepage once and return all parsed dashboard data.
 
         Returns a dict with keys: dashboard_version, cpu_load, cpu_temp,
@@ -251,9 +278,7 @@ class WpsdClient:
         return None
 
     @staticmethod
-    def _parse_disk_usage_stats(
-        html: str, mount: str
-    ) -> dict[str, float | None] | None:
+    def _parse_disk_usage_stats(html: str, mount: str) -> DiskUsage | None:
         """Parse disk usage stats for a given mount point from homepage HTML.
 
         The "Disk Usage" card shows the root filesystem as "<used> / <total>".

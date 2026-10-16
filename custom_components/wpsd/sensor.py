@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Literal
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -22,6 +23,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .client import DiskUsage
 from .const import ALL_MODES, MODE_STATES
 from .coordinator import (
     WpsdConfigEntry,
@@ -58,10 +60,10 @@ def _celsius(value: str | None) -> float | None:
 
 
 def _disk_stat(
-    disk: dict[str, float | None] | None, stat: str
+    disk: DiskUsage | None, stat: Literal["percent", "used_gb", "total_gb"]
 ) -> float | None:
     """Return one statistic of a parsed disk, if the dashboard showed it."""
-    return disk.get(stat) if disk else None
+    return disk[stat] if disk else None
 
 
 @dataclass(frozen=True, kw_only=True)
