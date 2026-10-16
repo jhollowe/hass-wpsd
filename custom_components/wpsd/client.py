@@ -311,15 +311,18 @@ class WpsdClient:
 
     @staticmethod
     def _parse_dashboard_version(html: str) -> str | None:
-        """Parse the WPSD dashboard version from homepage HTML.
+        """Parse the WPSD dashboard version (git short hash) from homepage HTML.
 
-        Looks for text like "WPSD Dashboard Ver.# 1.2.3" in the page.
+        The dashboard renders it as:
+        <span title='WPSD Dashboard Version # abc1234def'>WPSD Dashboard Ver.# abc1234def</span>
         """
-        import re
-
-        match = re.search(r"WPSD Dashboard Ver\.#\s*([\d.]+)", html)
-        if match:
-            return match.group(1)
+        prefix = "WPSD Dashboard Ver"
+        soup = BeautifulSoup(html, "html.parser")
+        for span in soup.find_all("span"):
+            text = span.get_text(strip=True)
+            if text.startswith(prefix) and "#" in text:
+                version = text.split("#", 1)[1].strip()
+                return version or None
         return None
 
     @staticmethod
