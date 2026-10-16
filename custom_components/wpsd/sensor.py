@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import timedelta
 from typing import Any
@@ -57,7 +58,7 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_FIRMWARE,
-        "name": "Firmware Version",
+        "name": "Modem Firmware Version",
         "icon": "mdi:information",
         "device_class": None,
         "unit": None,
@@ -65,7 +66,7 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_DISK_USAGE_ROOT,
-        "name": "Root Disk Usage",
+        "name": "/ Disk Usage",
         "icon": "mdi:harddisk",
         "device_class": None,
         "unit": "%",
@@ -73,7 +74,7 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_DISK_USED_ROOT,
-        "name": "Root Disk Used",
+        "name": "/ Disk Used",
         "icon": "mdi:harddisk",
         "device_class": None,
         "unit": UnitOfInformation.GIGABYTES,
@@ -82,7 +83,7 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_DISK_TOTAL_ROOT,
-        "name": "Root Disk Total",
+        "name": "/ Disk Total",
         "icon": "mdi:harddisk",
         "device_class": None,
         "unit": UnitOfInformation.GIGABYTES,
@@ -91,7 +92,7 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_DISK_USAGE_VARLOG,
-        "name": "Var Log Disk Usage",
+        "name": "/var/log Disk Usage",
         "icon": "mdi:harddisk",
         "device_class": None,
         "unit": "%",
@@ -99,7 +100,7 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_DISK_USED_VARLOG,
-        "name": "Var Log Disk Used",
+        "name": "/var/log Disk Used",
         "icon": "mdi:harddisk",
         "device_class": None,
         "unit": UnitOfInformation.GIGABYTES,
@@ -108,7 +109,7 @@ SENSOR_TYPES: list[dict[str, Any]] = [
     },
     {
         "key": SENSOR_DISK_TOTAL_VARLOG,
-        "name": "Var Log Disk Total",
+        "name": "/var/log Disk Total",
         "icon": "mdi:harddisk",
         "device_class": None,
         "unit": UnitOfInformation.GIGABYTES,
@@ -147,14 +148,14 @@ SENSOR_TYPES: list[dict[str, Any]] = [
         "unit": UnitOfTemperature.CELSIUS,
         "state_class": SensorStateClass.MEASUREMENT,
     },
-    {
-        "key": SENSOR_NET_TRAFFIC,
-        "name": "Network Traffic",
-        "icon": "mdi:network",
-        "device_class": None,
-        "unit": None,  # Parsed from HTML like "50.63MiB ↓ | 54.54MiB ↑"
-        "state_class": None,
-    },
+    # {
+    #     "key": SENSOR_NET_TRAFFIC,
+    #     "name": "Network Traffic",
+    #     "icon": "mdi:network",
+    #     "device_class": None,
+    #     "unit": None,  # Parsed from HTML like "50.63MiB ↓ | 54.54MiB ↑"
+    #     "state_class": None,
+    # },
 ]
 
 
@@ -168,33 +169,31 @@ async def async_setup_entry(
 
     async def async_update_data() -> dict[str, Any]:
         """Fetch data from WPSD."""
-        radio_status = await client.async_get_radio_status()
-        firmware = await client.async_get_firmware()
-        dashboard_version = await client.async_get_dashboard_version()
-        tx_freq = await client.async_get_tx_freq()
-        rx_freq = await client.async_get_rx_freq()
-        cpu_load = await client.async_get_cpu_load()
-        cpu_temp = await client.async_get_cpu_temp()
-        disk_root = await client.async_get_disk_usage_root()
-        disk_varlog = await client.async_get_disk_usage_varlog()
-        net_traffic = await client.async_get_net_traffic()
+        # Fetch each unique endpoint once, concurrently, to avoid repeated
+        # sequential HTTP requests that make setup take over 10 seconds.
+        radio_data, homepage_data = await asyncio.gather(
+            client.async_get_radio_data(),
+            client.async_get_homepage_data(),
+        )
 
         data: dict[str, Any] = {
-            SENSOR_ACTIVE_MODE: radio_status,
-            SENSOR_FIRMWARE: firmware,
-            "dashboard_version": dashboard_version,
-            SENSOR_TX_FREQ: tx_freq,
-            SENSOR_RX_FREQ: rx_freq,
-            SENSOR_CPU_LOAD: cpu_load,
-            SENSOR_CPU_TEMP: cpu_temp,
-            SENSOR_NET_TRAFFIC: net_traffic,
+            SENSOR_ACTIVE_MODE: radio_data["radio_status"],
+            SENSOR_FIRMWARE: radio_data["firmware"],
+            "dashboard_version": homepage_data["dashboard_version"],
+            SENSOR_TX_FREQ: radio_data["tx_freq"],
+            SENSOR_RX_FREQ: radio_data["rx_freq"],
+            SENSOR_CPU_LOAD: homepage_data["cpu_load"],
+            SENSOR_CPU_TEMP: homepage_data["cpu_temp"],
+            SENSOR_NET_TRAFFIC: homepage_data["net_traffic"],
         }
 
+        disk_root = homepage_data["disk_root"]
         if disk_root:
             data[SENSOR_DISK_USAGE_ROOT] = disk_root.get("percent")
             data[SENSOR_DISK_USED_ROOT] = disk_root.get("used_gb")
             data[SENSOR_DISK_TOTAL_ROOT] = disk_root.get("total_gb")
 
+        disk_varlog = homepage_data["disk_varlog"]
         if disk_varlog:
             data[SENSOR_DISK_USAGE_VARLOG] = disk_varlog.get("percent")
             data[SENSOR_DISK_USED_VARLOG] = disk_varlog.get("used_gb")

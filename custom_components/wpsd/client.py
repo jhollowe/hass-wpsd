@@ -93,6 +93,37 @@ class WpsdClient:
         """Get the WPSD dashboard homepage HTML."""
         return await self._async_get_text(ENDPOINT_HOMEPAGE)
 
+    async def async_get_radio_data(self) -> dict[str, Any]:
+        """Fetch radioinfo.php once and return all parsed radio data.
+
+        Returns a dict with keys: radio_status, firmware, tx_freq, rx_freq.
+        """
+        html = await self._async_get_text(ENDPOINT_RADIOINFO)
+        return {
+            "radio_status": self._parse_radio_status(html),
+            "firmware": self._parse_firmware(html),
+            "tx_freq": self._parse_tx_freq(html),
+            "rx_freq": self._parse_rx_freq(html),
+        }
+
+    async def async_get_homepage_data(self) -> dict[str, Any]:
+        """Fetch the homepage once and return all parsed dashboard data.
+
+        Returns a dict with keys: dashboard_version, cpu_load, cpu_temp,
+        net_traffic, disk_root, disk_varlog.
+        """
+        html = await self._async_get_text(ENDPOINT_HOMEPAGE)
+        disk_root = self._parse_disk_usage_stats(html, "/")
+        disk_varlog = self._parse_disk_usage_stats(html, "/var/log")
+        return {
+            "dashboard_version": self._parse_dashboard_version(html),
+            "cpu_load": self._parse_cpu_load(html),
+            "cpu_temp": self._parse_cpu_temp(html),
+            "net_traffic": self._parse_net_traffic(html),
+            "disk_root": disk_root,
+            "disk_varlog": disk_varlog,
+        }
+
     async def async_get_dashboard_version(self) -> str | None:
         """Get the WPSD dashboard version from homepage HTML."""
         html = await self._async_get_text(ENDPOINT_HOMEPAGE)
