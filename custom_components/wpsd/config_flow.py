@@ -6,7 +6,6 @@ import logging
 from typing import Any
 
 import aiohttp
-import async_timeout
 import voluptuous as vol
 from homeassistant.config_entries import (
     ConfigEntry,
@@ -69,7 +68,7 @@ class WpsdConfigFlow(ConfigFlow, domain=DOMAIN):
 
             try:
                 await client.async_get_last_heard(limit=1)
-            except aiohttp.ClientError, async_timeout.TimeoutError, AbortFlow:
+            except aiohttp.ClientError, TimeoutError, AbortFlow:
                 errors["base"] = "cannot_connect"
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Unexpected error")

@@ -19,7 +19,7 @@ Features that cannot be done without modifying WPSD. None are blocking; see `res
   - w0jrw.hopto.org
   - rpt.k0rq.com
   - f1zjh.dnsalias.org
-  - dashboard-digital.w8woo.org (https)
+  - https://dashboard-digital.w8woo.org/
   - http://gb7pg.ddns.net:8080/
   - https://n7uh.rvdv.org/
   - http://www.multimode.fr/ (only DMR, make sure missing other modes doesn't blow up)

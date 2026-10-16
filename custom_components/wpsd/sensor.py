@@ -202,7 +202,7 @@ async def async_setup_entry(
     await coordinator.async_config_entry_first_refresh()
 
     entities: list[SensorEntity] = [
-        WpsdSensor(coordinator, sensor_def, client.callsign)
+        WpsdSensor(coordinator, sensor_def, entry.entry_id, client.callsign)
         for sensor_def in SENSOR_TYPES
     ]
 
@@ -225,7 +225,7 @@ async def async_setup_entry(
     await mode_coordinator.async_config_entry_first_refresh()
 
     entities.extend(
-        WpsdModeStatusSensor(mode_coordinator, mode, client.callsign)
+        WpsdModeStatusSensor(mode_coordinator, mode, entry.entry_id, client.callsign)
         for mode in ALL_MODES
     )
     async_add_entities(entities)
@@ -240,13 +240,15 @@ class WpsdSensor(CoordinatorEntity, SensorEntity):
         self,
         coordinator: DataUpdateCoordinator,
         sensor_def: dict[str, Any],
+        entry_id: str,
         device_name: str | None = None,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
+        self._entry_id = entry_id
         self._callsign = device_name
         self._sensor_def = sensor_def
-        self._attr_unique_id = f"{DOMAIN}_{sensor_def['key']}"
+        self._attr_unique_id = f"{entry_id}_{sensor_def['key']}"
         self._attr_translation_key = sensor_def["key"]
         self._attr_icon = sensor_def.get("icon")
         self._attr_device_class = sensor_def.get("device_class")
@@ -262,7 +264,7 @@ class WpsdSensor(CoordinatorEntity, SensorEntity):
         data: dict[str, Any] | None = self.coordinator.data
         version = data.get("dashboard_version") if data else None
         return DeviceInfo(
-            identifiers={(DOMAIN, "wpsd_device")},
+            identifiers={(DOMAIN, self._entry_id)},
             translation_key="hotspot" if self._callsign else "hotspot_unknown",
             translation_placeholders={"callsign": self._callsign or ""},
             manufacturer="WPSD",
@@ -327,21 +329,23 @@ class WpsdModeStatusSensor(CoordinatorEntity, SensorEntity):
         self,
         coordinator: DataUpdateCoordinator,
         mode: str,
+        entry_id: str,
         device_name: str | None = None,
     ) -> None:
         """Initialize the mode status sensor."""
         super().__init__(coordinator)
+        self._entry_id = entry_id
         self._callsign = device_name
         self._mode = mode
         slug = re.sub(r"\W+", "_", mode.lower())
-        self._attr_unique_id = f"{DOMAIN}_{slug}_status"
+        self._attr_unique_id = f"{entry_id}_{slug}_status"
         self._attr_translation_key = slug
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information for this sensor."""
         return DeviceInfo(
-            identifiers={(DOMAIN, "wpsd_device")},
+            identifiers={(DOMAIN, self._entry_id)},
             translation_key="hotspot" if self._callsign else "hotspot_unknown",
             translation_placeholders={"callsign": self._callsign or ""},
             manufacturer="WPSD",
