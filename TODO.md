@@ -18,3 +18,22 @@ Features that cannot be done without modifying WPSD. None are blocking; see `res
 - Implement client for WPSD-WebCode endpoints.
 - Required entities: enabled-mode booleans, active mode sensor, firmware version.
 - Nice-to-have: active connections/callsigns, linked network/talkgroup, transmitting boolean.
+
+# Misc
+
+- add config setting for polling frequency
+- make WPSD version use bs4 instead of regex
+  - make it actually find the correct version string/commit hash
+- implement adding talkgroup/TS1/TS2/etc data as attributes on the mode sensors
+- remove "enabled" from sensor names
+- make sure mode sensors can support active, inactive, error, and paused as states
+- make the device name default be the callsign (pulled from the homepage title)
+- test with more active repeater(s):
+  - w0jrw.hopto.org
+  - rpt.k0rq.com
+  - f1zjh.dnsalias.org
+  - dashboard-digital.w8woo.org (https)
+  - http://gb7pg.ddns.net:8080/
+  - https://n7uh.rvdv.org/
+  - http://www.multimode.fr/ (only DMR, make sure missing other modes doesn't blow up)
+  - http://www.proton.org.uk/ (cross modes)
