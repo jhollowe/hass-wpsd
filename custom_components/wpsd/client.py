@@ -2,23 +2,23 @@
 
 from __future__ import annotations
 
-import logging
+import asyncio
 import re
 from typing import Any
 
 import aiohttp
-import async_timeout
 from bs4 import BeautifulSoup
 
 from .const import (
     DEFAULT_PORT,
+    LOGGER,
     ENDPOINT_API,
     ENDPOINT_HOMEPAGE,
     ENDPOINT_RADIOINFO,
     ENDPOINT_REPEATERINFO,
 )
 
-_LOGGER = logging.getLogger(__name__)
+REQUEST_TIMEOUT = 10
 
 
 class WpsdClient:
@@ -27,47 +27,27 @@ class WpsdClient:
     def __init__(
         self,
         host: str,
-        port: int = DEFAULT_PORT,
-        session: aiohttp.ClientSession | None = None,
+        port: int,
+        session: aiohttp.ClientSession,
     ) -> None:
         """Initialize the WPSD client."""
-        self._host = host
-        self._port = port
         self._session = session
         self._base_url = f"http://{host}:{port}"
         self.callsign: str | None = None
 
     async def _async_get_json(self, endpoint: str) -> Any:
         """Fetch JSON from an endpoint."""
-        session = self._session or aiohttp.ClientSession()
-        close_session = self._session is None
-        try:
-            async with async_timeout.timeout(10):
-                async with session.get(f"{self._base_url}{endpoint}") as resp:
-                    resp.raise_for_status()
-                    return await resp.json()
-        except (TimeoutError, aiohttp.ClientError) as err:
-            _LOGGER.error("Error fetching %s: %s", endpoint, err)
-            raise
-        finally:
-            if close_session:
-                await session.close()
+        async with asyncio.timeout(REQUEST_TIMEOUT):
+            async with self._session.get(f"{self._base_url}{endpoint}") as resp:
+                resp.raise_for_status()
+                return await resp.json()
 
     async def _async_get_text(self, endpoint: str) -> str:
         """Fetch text/HTML from an endpoint."""
-        session = self._session or aiohttp.ClientSession()
-        close_session = self._session is None
-        try:
-            async with async_timeout.timeout(10):
-                async with session.get(f"{self._base_url}{endpoint}") as resp:
-                    resp.raise_for_status()
-                    return await resp.text()
-        except (TimeoutError, aiohttp.ClientError) as err:
-            _LOGGER.error("Error fetching %s: %s", endpoint, err)
-            raise
-        finally:
-            if close_session:
-                await session.close()
+        async with asyncio.timeout(REQUEST_TIMEOUT):
+            async with self._session.get(f"{self._base_url}{endpoint}") as resp:
+                resp.raise_for_status()
+                return await resp.text()
 
     async def async_get_last_heard(self, limit: int = 5) -> list[dict[str, Any]]:
         """Get last-heard transmissions from the JSON API."""
@@ -75,25 +55,6 @@ class WpsdClient:
             f"{ENDPOINT_API}?limit={limit}&names=false&country=false"
         )
         return data if isinstance(data, list) else []
-
-    async def async_get_radio_status(self) -> str:
-        """Get the radio status text from radioinfo.php."""
-        html = await self._async_get_text(ENDPOINT_RADIOINFO)
-        return self._parse_radio_status(html)
-
-    async def async_get_modes_enabled(self) -> dict[str, str]:
-        """Get the enabled/paused/inactive state of each mode from repeaterinfo.php."""
-        html = await self._async_get_text(ENDPOINT_REPEATERINFO)
-        return self._parse_modes_enabled(html)
-
-    async def async_get_firmware(self) -> str | None:
-        """Get the modem firmware version from radioinfo.php."""
-        html = await self._async_get_text(ENDPOINT_RADIOINFO)
-        return self._parse_firmware(html)
-
-    async def async_get_homepage(self) -> str:
-        """Get the WPSD dashboard homepage HTML."""
-        return await self._async_get_text(ENDPOINT_HOMEPAGE)
 
     async def async_get_radio_data(self) -> dict[str, Any]:
         """Fetch radioinfo.php once and return all parsed radio data.
@@ -129,41 +90,6 @@ class WpsdClient:
         """Get the hotspot callsign from the homepage title."""
         html = await self._async_get_text(ENDPOINT_HOMEPAGE)
         return self._parse_callsign(html)
-
-    async def async_get_dashboard_version(self) -> str | None:
-        """Get the WPSD dashboard version from homepage HTML."""
-        html = await self._async_get_text(ENDPOINT_HOMEPAGE)
-        return self._parse_dashboard_version(html)
-
-    async def async_get_disk_usage_root(self) -> dict[str, float | None] | None:
-        """Get root disk usage stats from homepage HTML."""
-        html = await self._async_get_text(ENDPOINT_HOMEPAGE)
-        return self._parse_disk_usage_stats(html, "/")
-
-    async def async_get_disk_usage_varlog(self) -> dict[str, float | None] | None:
-        """Get /var/log disk usage stats from homepage HTML."""
-        html = await self._async_get_text(ENDPOINT_HOMEPAGE)
-        return self._parse_disk_usage_stats(html, "/var/log")
-
-    async def async_get_tx_freq(self) -> str | None:
-        """Get the TX frequency from radioinfo.php."""
-        html = await self._async_get_text(ENDPOINT_RADIOINFO)
-        return self._parse_tx_freq(html)
-
-    async def async_get_rx_freq(self) -> str | None:
-        """Get the RX frequency from radioinfo.php."""
-        html = await self._async_get_text(ENDPOINT_RADIOINFO)
-        return self._parse_rx_freq(html)
-
-    async def async_get_cpu_load(self) -> str | None:
-        """Get the CPU load percentage from the homepage."""
-        html = await self._async_get_text(ENDPOINT_HOMEPAGE)
-        return self._parse_cpu_load(html)
-
-    async def async_get_cpu_temp(self) -> str | None:
-        """Get the CPU temperature from the homepage."""
-        html = await self._async_get_text(ENDPOINT_HOMEPAGE)
-        return self._parse_cpu_temp(html)
 
     @staticmethod
     def _parse_radio_status(html: str) -> str:
@@ -210,7 +136,7 @@ class WpsdClient:
                 name = span.get_text(strip=True)
                 if name.endswith(" Net"):
                     if status not in VALID_STATUSES:
-                        _LOGGER.warning(
+                        LOGGER.warning(
                             "Invalid network status '%s' for '%s', "
                             "defaulting to 'inactive'",
                             status,

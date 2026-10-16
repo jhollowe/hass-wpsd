@@ -88,6 +88,15 @@ reloads the integration.
 Both accept values from `1` to `3600` seconds. Options are set per hotspot, so
 a less powerful device can be polled less often than the others.
 
+## Removing the integration
+
+1. Go to Settings → Devices & services and select WPSD.
+2. Open the three-dot menu of the hotspot's entry and select `Delete`.
+3. If installed with HACS, optionally remove the repository from HACS and
+   restart Home Assistant.
+
+Deleting the entry removes the hotspot's device and all of its entities.
+
 ## Troubleshooting
 
 ### Debug Logging

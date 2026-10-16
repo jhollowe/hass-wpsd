@@ -98,7 +98,6 @@ def make_client(response: FakeResponse | Exception) -> tuple[WpsdClient, MagicMo
     return WpsdClient("wpsd.local", 8080, session), session
 
 
-# ---- parsers ---------------------------------------------------------------
 
 
 def test_parse_radio_status() -> None:
@@ -274,12 +273,11 @@ def test_parse_network_status_invalid_defaults_to_inactive(
     assert "Invalid network status 'bogus' for 'YSF Net'" in caplog.text
 
 
-# ---- HTTP ------------------------------------------------------------------
 
 
 async def test_base_url_uses_host_and_port() -> None:
     client, session = make_client(FakeResponse(text="x"))
-    await client.async_get_homepage()
+    await client.async_get_callsign()
     session.get.assert_called_once_with(f"http://wpsd.local:8080{ENDPOINT_HOMEPAGE}")
 
 
@@ -328,37 +326,9 @@ async def test_get_modes_with_network_fetches_once() -> None:
     )
 
 
-@pytest.mark.parametrize(
-    ("method", "html", "expected"),
-    [
-        ("async_get_callsign", HOMEPAGE_HTML, "W1AW"),
-        ("async_get_dashboard_version", HOMEPAGE_HTML, "abc1234def"),
-        ("async_get_cpu_load", HOMEPAGE_HTML, "38"),
-        ("async_get_radio_status", RADIOINFO_HTML, "IDLE"),
-        ("async_get_firmware", RADIOINFO_HTML, "MMDVM_HS_Hat-v1.6.1"),
-        ("async_get_tx_freq", RADIOINFO_HTML, "438.800 MHz"),
-        ("async_get_rx_freq", RADIOINFO_HTML, "439.800 MHz"),
-    ],
-)
-async def test_single_value_getters(method: str, html: str, expected: str) -> None:
-    client, _ = make_client(FakeResponse(text=html))
-    assert await getattr(client, method)() == expected
-
-
-async def test_get_modes_enabled() -> None:
-    client, _ = make_client(FakeResponse(text=REPEATERINFO_HTML))
-    assert (await client.async_get_modes_enabled())["P25"] == "error"
-
-
-async def test_get_disk_usage_getters() -> None:
+async def test_get_callsign() -> None:
     client, _ = make_client(FakeResponse(text=HOMEPAGE_HTML))
-    assert (await client.async_get_disk_usage_root())["used_gb"] == 4.37
-    assert (await client.async_get_disk_usage_varlog())["total_gb"] == 0.25
-
-
-async def test_get_cpu_temp() -> None:
-    client, _ = make_client(FakeResponse(text=HOMEPAGE_HTML))
-    assert (await client.async_get_cpu_temp()).startswith("135°F")
+    assert await client.async_get_callsign() == "W1AW"
 
 
 @pytest.mark.parametrize("method", ["_async_get_text", "_async_get_json"])
@@ -370,10 +340,7 @@ async def test_http_error_status_is_raised(method: str) -> None:
 
 
 @pytest.mark.parametrize("method", ["_async_get_text", "_async_get_json"])
-async def test_connection_error_is_raised_and_logged(
-    method: str, caplog: pytest.LogCaptureFixture
-) -> None:
+async def test_connection_error_is_raised(method: str) -> None:
     client, _ = make_client(aiohttp.ClientConnectionError("down"))
-    with caplog.at_level(logging.ERROR), pytest.raises(aiohttp.ClientError):
+    with pytest.raises(aiohttp.ClientError):
         await getattr(client, method)("/x")
-    assert "Error fetching /x" in caplog.text

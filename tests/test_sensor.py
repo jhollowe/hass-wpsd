@@ -39,7 +39,6 @@ def entity_id(hass: HomeAssistant, entry: MockConfigEntry, suffix: str) -> str:
     return found
 
 
-# ---- system sensors --------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -137,7 +136,6 @@ async def test_missing_disk_data_gives_unknown(
         assert state.state == STATE_UNKNOWN
 
 
-# ---- mode sensors ----------------------------------------------------------
 
 
 async def test_one_sensor_per_mode_and_no_binary_sensors(
@@ -233,7 +231,6 @@ async def test_missing_mode_does_not_break_setup(
     )
 
 
-# ---- IDs -------------------------------------------------------------------
 
 
 async def test_unique_ids_are_per_config_entry(
@@ -247,7 +244,6 @@ async def test_unique_ids_are_per_config_entry(
     )
 
 
-# ---- polling intervals -----------------------------------------------------
 
 
 async def test_mode_sensors_poll_every_5s_by_default(

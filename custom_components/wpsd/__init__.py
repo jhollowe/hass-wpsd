@@ -2,45 +2,30 @@
 
 from __future__ import annotations
 
-import logging
-from dataclasses import dataclass
-
 import aiohttp
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .client import WpsdClient
-from .coordinator import WpsdModeCoordinator, WpsdSystemCoordinator
 from .const import DOMAIN
+from .coordinator import (
+    WpsdConfigEntry,
+    WpsdData,
+    WpsdModeCoordinator,
+    WpsdSystemCoordinator,
+)
 
-_LOGGER = logging.getLogger(__name__)
-
-
-
-@dataclass
-class WpsdData:
-    """Runtime data shared by the platforms of one config entry."""
-
-    client: WpsdClient
-    system_coordinator: WpsdSystemCoordinator
-    mode_coordinator: WpsdModeCoordinator
+PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 
-PLATFORMS: list[Platform] = [
-    Platform.SENSOR,
-]
-
-
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: WpsdConfigEntry) -> bool:
     """Set up WPSD from a config entry."""
-    session = async_get_clientsession(hass)
     client = WpsdClient(
         host=entry.data[CONF_HOST],
         port=entry.data[CONF_PORT],
-        session=session,
+        session=async_get_clientsession(hass),
     )
 
     try:
@@ -54,29 +39,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     system_coordinator = WpsdSystemCoordinator(hass, entry, client)
     mode_coordinator = WpsdModeCoordinator(hass, entry, client)
-    # Refreshing here, before the platforms are forwarded, lets a failure raise
-    # ConfigEntryNotReady so Home Assistant retries the setup.
     await system_coordinator.async_config_entry_first_refresh()
     await mode_coordinator.async_config_entry_first_refresh()
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = WpsdData(
-        client, system_coordinator, mode_coordinator
-    )
-
-    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    entry.runtime_data = WpsdData(client, system_coordinator, mode_coordinator)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 
-async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Reload the entry when options change so new intervals take effect."""
-    await hass.config_entries.async_reload(entry.entry_id)
-
-
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: WpsdConfigEntry) -> bool:
     """Unload a WPSD config entry."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
-    return unload_ok
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

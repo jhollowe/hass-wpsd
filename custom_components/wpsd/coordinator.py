@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import asyncio
-import logging
+from abc import abstractmethod
+from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
 
+import aiohttp
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .client import WpsdClient
 from .const import (
@@ -18,98 +20,141 @@ from .const import (
     DEFAULT_MODE_SCAN_INTERVAL,
     DEFAULT_SYSTEM_SCAN_INTERVAL,
     DOMAIN,
-    SENSOR_ACTIVE_MODE,
-    SENSOR_CPU_LOAD,
-    SENSOR_CPU_TEMP,
-    SENSOR_DISK_TOTAL_ROOT,
-    SENSOR_DISK_TOTAL_VARLOG,
-    SENSOR_DISK_USAGE_ROOT,
-    SENSOR_DISK_USAGE_VARLOG,
-    SENSOR_DISK_USED_ROOT,
-    SENSOR_DISK_USED_VARLOG,
-    SENSOR_FIRMWARE,
-    SENSOR_RX_FREQ,
-    SENSOR_TX_FREQ,
+    LOGGER,
 )
 
-_LOGGER = logging.getLogger(__name__)
+type WpsdConfigEntry = ConfigEntry[WpsdData]
 
 
-class WpsdSystemCoordinator(DataUpdateCoordinator[dict[str, Any]]):
+@dataclass
+class WpsdSystemData:
+    """Radio and dashboard data as shown by WPSD (raw text values)."""
+
+    active_mode: str
+    firmware: str | None
+    dashboard_version: str | None
+    tx_freq: str | None
+    rx_freq: str | None
+    cpu_load: str | None
+    cpu_temp: str | None
+    disk_root: dict[str, float | None] | None
+    disk_varlog: dict[str, float | None] | None
+
+
+@dataclass
+class WpsdModeData:
+    """Status of each mode and of its network, keyed by WPSD's names."""
+
+    modes: dict[str, str]
+    networks: dict[str, str]
+
+
+class WpsdCoordinator[_DataT](DataUpdateCoordinator[_DataT]):
+    """Base coordinator for polling one group of WPSD pages."""
+
+    config_entry: WpsdConfigEntry
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config_entry: WpsdConfigEntry,
+        client: WpsdClient,
+        *,
+        name: str,
+        interval_option: str,
+        default_interval: int,
+    ) -> None:
+        """Initialize the coordinator."""
+        super().__init__(
+            hass,
+            LOGGER,
+            config_entry=config_entry,
+            name=f"{DOMAIN}_{name}",
+            update_interval=timedelta(
+                seconds=config_entry.options.get(interval_option, default_interval)
+            ),
+        )
+        self.client = client
+
+    async def _async_update_data(self) -> _DataT:
+        """Fetch data from WPSD."""
+        try:
+            return await self._async_fetch()
+        except (TimeoutError, aiohttp.ClientError) as err:
+            raise UpdateFailed(
+                translation_domain=DOMAIN,
+                translation_key="cannot_connect",
+                translation_placeholders={"error": str(err)},
+            ) from err
+
+    @abstractmethod
+    async def _async_fetch(self) -> _DataT:
+        """Fetch and parse the pages this coordinator polls."""
+
+
+class WpsdSystemCoordinator(WpsdCoordinator[WpsdSystemData]):
     """Polls radio and dashboard data (frequencies, firmware, system stats)."""
 
     def __init__(
-        self, hass: HomeAssistant, entry: ConfigEntry, client: WpsdClient
+        self, hass: HomeAssistant, config_entry: WpsdConfigEntry, client: WpsdClient
     ) -> None:
         """Initialize the coordinator."""
         super().__init__(
             hass,
-            _LOGGER,
-            config_entry=entry,
-            name=f"{DOMAIN}_system",
-            update_interval=timedelta(
-                seconds=entry.options.get(
-                    CONF_SYSTEM_SCAN_INTERVAL, DEFAULT_SYSTEM_SCAN_INTERVAL
-                )
-            ),
+            config_entry,
+            client,
+            name="system",
+            interval_option=CONF_SYSTEM_SCAN_INTERVAL,
+            default_interval=DEFAULT_SYSTEM_SCAN_INTERVAL,
         )
-        self._client = client
 
-    async def _async_update_data(self) -> dict[str, Any]:
-        """Fetch data from WPSD."""
-        # Fetch each unique endpoint once, concurrently, to avoid repeated
-        # sequential HTTP requests that make setup take over 10 seconds.
+    async def _async_fetch(self) -> WpsdSystemData:
+        """Fetch each page once, concurrently."""
+        radio_data: dict[str, Any]
+        homepage_data: dict[str, Any]
         radio_data, homepage_data = await asyncio.gather(
-            self._client.async_get_radio_data(),
-            self._client.async_get_homepage_data(),
+            self.client.async_get_radio_data(),
+            self.client.async_get_homepage_data(),
+        )
+        return WpsdSystemData(
+            active_mode=radio_data["radio_status"],
+            firmware=radio_data["firmware"],
+            dashboard_version=homepage_data["dashboard_version"],
+            tx_freq=radio_data["tx_freq"],
+            rx_freq=radio_data["rx_freq"],
+            cpu_load=homepage_data["cpu_load"],
+            cpu_temp=homepage_data["cpu_temp"],
+            disk_root=homepage_data["disk_root"],
+            disk_varlog=homepage_data["disk_varlog"],
         )
 
-        data: dict[str, Any] = {
-            SENSOR_ACTIVE_MODE: radio_data["radio_status"],
-            SENSOR_FIRMWARE: radio_data["firmware"],
-            "dashboard_version": homepage_data["dashboard_version"],
-            SENSOR_TX_FREQ: radio_data["tx_freq"],
-            SENSOR_RX_FREQ: radio_data["rx_freq"],
-            SENSOR_CPU_LOAD: homepage_data["cpu_load"],
-            SENSOR_CPU_TEMP: homepage_data["cpu_temp"],
-        }
 
-        disk_root = homepage_data["disk_root"]
-        if disk_root:
-            data[SENSOR_DISK_USAGE_ROOT] = disk_root.get("percent")
-            data[SENSOR_DISK_USED_ROOT] = disk_root.get("used_gb")
-            data[SENSOR_DISK_TOTAL_ROOT] = disk_root.get("total_gb")
-
-        disk_varlog = homepage_data["disk_varlog"]
-        if disk_varlog:
-            data[SENSOR_DISK_USAGE_VARLOG] = disk_varlog.get("percent")
-            data[SENSOR_DISK_USED_VARLOG] = disk_varlog.get("used_gb")
-            data[SENSOR_DISK_TOTAL_VARLOG] = disk_varlog.get("total_gb")
-
-        return data
-
-
-class WpsdModeCoordinator(DataUpdateCoordinator[dict[str, Any]]):
+class WpsdModeCoordinator(WpsdCoordinator[WpsdModeData]):
     """Polls the status of each mode and its network."""
 
     def __init__(
-        self, hass: HomeAssistant, entry: ConfigEntry, client: WpsdClient
+        self, hass: HomeAssistant, config_entry: WpsdConfigEntry, client: WpsdClient
     ) -> None:
         """Initialize the coordinator."""
         super().__init__(
             hass,
-            _LOGGER,
-            config_entry=entry,
-            name=f"{DOMAIN}_modes",
-            update_interval=timedelta(
-                seconds=entry.options.get(
-                    CONF_MODE_SCAN_INTERVAL, DEFAULT_MODE_SCAN_INTERVAL
-                )
-            ),
+            config_entry,
+            client,
+            name="modes",
+            interval_option=CONF_MODE_SCAN_INTERVAL,
+            default_interval=DEFAULT_MODE_SCAN_INTERVAL,
         )
-        self._client = client
 
-    async def _async_update_data(self) -> dict[str, Any]:
-        """Fetch mode and network status from WPSD."""
-        modes, networks = await self._client.async_get_modes_with_network()
-        return {"modes": modes, "networks": networks}
+    async def _async_fetch(self) -> WpsdModeData:
+        """Fetch mode and network status."""
+        modes, networks = await self.client.async_get_modes_with_network()
+        return WpsdModeData(modes=modes, networks=networks)
+
+
+@dataclass
+class WpsdData:
+    """Runtime data shared by the platforms of one config entry."""
+
+    client: WpsdClient
+    system_coordinator: WpsdSystemCoordinator
+    mode_coordinator: WpsdModeCoordinator

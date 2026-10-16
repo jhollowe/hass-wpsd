@@ -2,20 +2,18 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 import aiohttp
 import voluptuous as vol
 from homeassistant.config_entries import (
-    ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
     OptionsFlow,
+    OptionsFlowWithReload,
 )
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import AbortFlow
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .client import WpsdClient
@@ -26,11 +24,11 @@ from .const import (
     DEFAULT_PORT,
     DEFAULT_SYSTEM_SCAN_INTERVAL,
     DOMAIN,
+    LOGGER,
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
 )
-
-_LOGGER = logging.getLogger(__name__)
+from .coordinator import WpsdConfigEntry
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
@@ -47,7 +45,7 @@ class WpsdConfigFlow(ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
+    def async_get_options_flow(config_entry: WpsdConfigEntry) -> OptionsFlow:
         """Return the options flow handler."""
         return WpsdOptionsFlow()
 
@@ -68,10 +66,10 @@ class WpsdConfigFlow(ConfigFlow, domain=DOMAIN):
 
             try:
                 await client.async_get_last_heard(limit=1)
-            except aiohttp.ClientError, TimeoutError, AbortFlow:
+            except aiohttp.ClientError, TimeoutError:
                 errors["base"] = "cannot_connect"
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Unexpected error")
+            except Exception:  # noqa: BLE001
+                LOGGER.exception("Unexpected error")
                 errors["base"] = "unknown"
             else:
                 return self.async_create_entry(
@@ -83,7 +81,7 @@ class WpsdConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
 
-class WpsdOptionsFlow(OptionsFlow):
+class WpsdOptionsFlow(OptionsFlowWithReload):
     """Handle WPSD options (polling intervals)."""
 
     async def async_step_init(

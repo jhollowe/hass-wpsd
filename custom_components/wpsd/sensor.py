@@ -2,300 +2,226 @@
 
 from __future__ import annotations
 
-import logging
 import re
-from typing import Any
+from collections.abc import Callable
+from dataclasses import dataclass
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
+    SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    PERCENTAGE,
     UnitOfFrequency,
     UnitOfInformation,
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
+
+from .const import ALL_MODES, MODE_STATES
+from .coordinator import (
+    WpsdConfigEntry,
+    WpsdModeCoordinator,
+    WpsdSystemCoordinator,
+    WpsdSystemData,
 )
+from .entity import WpsdEntity
 
-from . import WpsdData
+PARALLEL_UPDATES = 0
 
-from .const import (
-    ALL_MODES,
-    DOMAIN,
-    MODE_STATES,
-    SENSOR_ACTIVE_MODE,
-    SENSOR_CPU_LOAD,
-    SENSOR_CPU_TEMP,
-    SENSOR_DISK_TOTAL_ROOT,
-    SENSOR_DISK_TOTAL_VARLOG,
-    SENSOR_DISK_USAGE_ROOT,
-    SENSOR_DISK_USAGE_VARLOG,
-    SENSOR_DISK_USED_ROOT,
-    SENSOR_DISK_USED_VARLOG,
-    SENSOR_FIRMWARE,
-    SENSOR_RX_FREQ,
-    SENSOR_TX_FREQ,
+_NUMBER = re.compile(r"[\d.]+")
+_CELSIUS = re.compile(r"([\d.]+)°C")
+
+
+def _first_number(value: str | None) -> float | None:
+    """Return the first number in a value like "440.525 MHz" or "38"."""
+    if value is None or (match := _NUMBER.search(value)) is None:
+        return None
+    try:
+        return float(match.group())
+    except ValueError:
+        return None
+
+
+def _celsius(value: str | None) -> float | None:
+    """Return the Celsius part of a value like "135°F / 57°C"."""
+    if value is None or (match := _CELSIUS.search(value)) is None:
+        return None
+    try:
+        return float(match.group(1))
+    except ValueError:
+        return None
+
+
+def _disk_stat(
+    disk: dict[str, float | None] | None, stat: str
+) -> float | None:
+    """Return one statistic of a parsed disk, if the dashboard showed it."""
+    return disk.get(stat) if disk else None
+
+
+@dataclass(frozen=True, kw_only=True)
+class WpsdSensorEntityDescription(SensorEntityDescription):
+    """Describes a WPSD system sensor."""
+
+    value_fn: Callable[[WpsdSystemData], str | float | None]
+
+
+SENSORS: tuple[WpsdSensorEntityDescription, ...] = (
+    WpsdSensorEntityDescription(
+        key="active_mode",
+        translation_key="active_mode",
+        device_class=SensorDeviceClass.ENUM,
+        value_fn=lambda data: data.active_mode,
+    ),
+    WpsdSensorEntityDescription(
+        key="firmware",
+        translation_key="firmware",
+        value_fn=lambda data: data.firmware,
+    ),
+    WpsdSensorEntityDescription(
+        key="disk_usage_root",
+        translation_key="disk_usage_root",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: _disk_stat(data.disk_root, "percent"),
+    ),
+    WpsdSensorEntityDescription(
+        key="disk_used_root",
+        translation_key="disk_used_root",
+        native_unit_of_measurement=UnitOfInformation.GIGABYTES,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
+        value_fn=lambda data: _disk_stat(data.disk_root, "used_gb"),
+    ),
+    WpsdSensorEntityDescription(
+        key="disk_total_root",
+        translation_key="disk_total_root",
+        native_unit_of_measurement=UnitOfInformation.GIGABYTES,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
+        value_fn=lambda data: _disk_stat(data.disk_root, "total_gb"),
+    ),
+    WpsdSensorEntityDescription(
+        key="disk_usage_varlog",
+        translation_key="disk_usage_varlog",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: _disk_stat(data.disk_varlog, "percent"),
+    ),
+    WpsdSensorEntityDescription(
+        key="disk_used_varlog",
+        translation_key="disk_used_varlog",
+        native_unit_of_measurement=UnitOfInformation.GIGABYTES,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
+        value_fn=lambda data: _disk_stat(data.disk_varlog, "used_gb"),
+    ),
+    WpsdSensorEntityDescription(
+        key="disk_total_varlog",
+        translation_key="disk_total_varlog",
+        native_unit_of_measurement=UnitOfInformation.GIGABYTES,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
+        value_fn=lambda data: _disk_stat(data.disk_varlog, "total_gb"),
+    ),
+    WpsdSensorEntityDescription(
+        key="tx_freq",
+        translation_key="tx_freq",
+        device_class=SensorDeviceClass.FREQUENCY,
+        native_unit_of_measurement=UnitOfFrequency.MEGAHERTZ,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: _first_number(data.tx_freq),
+    ),
+    WpsdSensorEntityDescription(
+        key="rx_freq",
+        translation_key="rx_freq",
+        device_class=SensorDeviceClass.FREQUENCY,
+        native_unit_of_measurement=UnitOfFrequency.MEGAHERTZ,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: _first_number(data.rx_freq),
+    ),
+    WpsdSensorEntityDescription(
+        key="cpu_load",
+        translation_key="cpu_load",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: _first_number(data.cpu_load),
+    ),
+    WpsdSensorEntityDescription(
+        key="cpu_temp",
+        translation_key="cpu_temp",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: _celsius(data.cpu_temp),
+    ),
 )
-
-_LOGGER = logging.getLogger(__name__)
-
-# Sensor definitions: (key, icon, device_class, unit, state_class)
-# Names come from translations (entity.sensor.<key>.name)
-SENSOR_TYPES: list[dict[str, Any]] = [
-    {
-        "key": SENSOR_ACTIVE_MODE,
-        "icon": "mdi:radio",
-        "device_class": SensorDeviceClass.ENUM,
-        "unit": None,
-        "state_class": None,
-    },
-    {
-        "key": SENSOR_FIRMWARE,
-        "icon": "mdi:information",
-        "device_class": None,
-        "unit": None,
-        "state_class": None,
-    },
-    {
-        "key": SENSOR_DISK_USAGE_ROOT,
-        "icon": "mdi:harddisk",
-        "device_class": None,
-        "unit": "%",
-        "state_class": SensorStateClass.MEASUREMENT,
-    },
-    {
-        "key": SENSOR_DISK_USED_ROOT,
-        "icon": "mdi:harddisk",
-        "device_class": None,
-        "unit": UnitOfInformation.GIGABYTES,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "entity_registry_enabled_default": False,
-    },
-    {
-        "key": SENSOR_DISK_TOTAL_ROOT,
-        "icon": "mdi:harddisk",
-        "device_class": None,
-        "unit": UnitOfInformation.GIGABYTES,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "entity_registry_enabled_default": False,
-    },
-    {
-        "key": SENSOR_DISK_USAGE_VARLOG,
-        "icon": "mdi:harddisk",
-        "device_class": None,
-        "unit": "%",
-        "state_class": SensorStateClass.MEASUREMENT,
-    },
-    {
-        "key": SENSOR_DISK_USED_VARLOG,
-        "icon": "mdi:harddisk",
-        "device_class": None,
-        "unit": UnitOfInformation.GIGABYTES,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "entity_registry_enabled_default": False,
-    },
-    {
-        "key": SENSOR_DISK_TOTAL_VARLOG,
-        "icon": "mdi:harddisk",
-        "device_class": None,
-        "unit": UnitOfInformation.GIGABYTES,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "entity_registry_enabled_default": False,
-    },
-    {
-        "key": SENSOR_TX_FREQ,
-        "icon": "mdi:radio-tower",
-        "device_class": SensorDeviceClass.FREQUENCY,
-        "unit": UnitOfFrequency.MEGAHERTZ,
-        "state_class": SensorStateClass.MEASUREMENT,
-    },
-    {
-        "key": SENSOR_RX_FREQ,
-        "icon": "mdi:radio-tower",
-        "device_class": SensorDeviceClass.FREQUENCY,
-        "unit": UnitOfFrequency.MEGAHERTZ,
-        "state_class": SensorStateClass.MEASUREMENT,
-    },
-    {
-        "key": SENSOR_CPU_LOAD,
-        "icon": "mdi:cpu-monitor",
-        "device_class": None,
-        "unit": "%",
-        "state_class": SensorStateClass.MEASUREMENT,
-    },
-    {
-        "key": SENSOR_CPU_TEMP,
-        "icon": "mdi:thermometer",
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "unit": UnitOfTemperature.CELSIUS,
-        "state_class": SensorStateClass.MEASUREMENT,
-    },
-]
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: WpsdConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up WPSD sensors."""
-    data: WpsdData = hass.data[DOMAIN][entry.entry_id]
-    callsign = data.client.callsign
-
+    data = entry.runtime_data
     entities: list[SensorEntity] = [
-        WpsdSensor(data.system_coordinator, sensor_def, entry.entry_id, callsign)
-        for sensor_def in SENSOR_TYPES
+        WpsdSensor(data.system_coordinator, description) for description in SENSORS
     ]
-    entities.extend(
-        WpsdModeStatusSensor(data.mode_coordinator, mode, entry.entry_id, callsign)
-        for mode in ALL_MODES
-    )
+    entities.extend(WpsdModeSensor(data.mode_coordinator, mode) for mode in ALL_MODES)
     async_add_entities(entities)
 
 
-class WpsdSensor(CoordinatorEntity, SensorEntity):
-    """Generic sensor for WPSD data."""
+class WpsdSensor(WpsdEntity[WpsdSystemCoordinator], SensorEntity):
+    """Sensor for one value from the radio or dashboard pages."""
 
-    _attr_has_entity_name = True
+    entity_description: WpsdSensorEntityDescription
 
     def __init__(
         self,
-        coordinator: DataUpdateCoordinator,
-        sensor_def: dict[str, Any],
-        entry_id: str,
-        device_name: str | None = None,
+        coordinator: WpsdSystemCoordinator,
+        description: WpsdSensorEntityDescription,
     ) -> None:
         """Initialize the sensor."""
-        super().__init__(coordinator)
-        self._entry_id = entry_id
-        self._callsign = device_name
-        self._sensor_def = sensor_def
-        self._attr_unique_id = f"{entry_id}_{sensor_def['key']}"
-        self._attr_translation_key = sensor_def["key"]
-        self._attr_icon = sensor_def.get("icon")
-        self._attr_device_class = sensor_def.get("device_class")
-        self._attr_native_unit_of_measurement = sensor_def.get("unit")
-        self._attr_state_class = sensor_def.get("state_class")
-        self._attr_entity_registry_enabled_default = sensor_def.get(
-            "entity_registry_enabled_default", True
-        )
+        super().__init__(coordinator, coordinator.data.dashboard_version)
+        self.entity_description = description
+        self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{description.key}"
 
     @property
-    def device_info(self) -> DeviceInfo:
-        """Return device information for this sensor."""
-        data: dict[str, Any] | None = self.coordinator.data
-        version = data.get("dashboard_version") if data else None
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._entry_id)},
-            translation_key="hotspot" if self._callsign else "hotspot_unknown",
-            translation_placeholders={"callsign": self._callsign or ""},
-            manufacturer="WPSD",
-            model="WPSD Hotspot",
-            sw_version=version,
-        )
-
-    @property
-    def native_value(self) -> str | None:
+    def native_value(self) -> str | float | None:
         """Return the sensor value."""
-        data: dict[str, Any] | None = self.coordinator.data
-        if data is None:
-            return None
-        value = data.get(self._sensor_def["key"])
-        if value is None:
-            return None
-
-        key = self._sensor_def["key"]
-
-        # Parse numeric values for measurement sensors
-        if key == SENSOR_TX_FREQ or key == SENSOR_RX_FREQ:
-            # Value like "440.525 MHz" -> return float
-            import re
-
-            match = re.search(r"([\d.]+)", value)
-            if match:
-                return float(match.group(1))
-            return None
-
-        if key == SENSOR_CPU_TEMP:
-            # Value like "135°F / 57°C" -> extract Celsius value
-            import re
-
-            match = re.search(r"([\d.]+)°C", value)
-            if match:
-                return float(match.group(1))
-            return None
-
-        if key == SENSOR_CPU_LOAD:
-            # Value like "38%" -> return float
-            import re
-
-            match = re.search(r"([\d.]+)", value)
-            if match:
-                return float(match.group(1))
-            return None
-
-        return value
+        return self.entity_description.value_fn(self.coordinator.data)
 
 
-class WpsdModeStatusSensor(CoordinatorEntity, SensorEntity):
+class WpsdModeSensor(WpsdEntity[WpsdModeCoordinator], SensorEntity):
     """Status of a WPSD mode (active, inactive, error or paused).
 
     The mode's network status is exposed as an attribute.
     """
 
-    _attr_has_entity_name = True
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = MODE_STATES
 
-    def __init__(
-        self,
-        coordinator: DataUpdateCoordinator,
-        mode: str,
-        entry_id: str,
-        device_name: str | None = None,
-    ) -> None:
+    def __init__(self, coordinator: WpsdModeCoordinator, mode: str) -> None:
         """Initialize the mode status sensor."""
         super().__init__(coordinator)
-        self._entry_id = entry_id
-        self._callsign = device_name
         self._mode = mode
         slug = re.sub(r"\W+", "_", mode.lower())
-        self._attr_unique_id = f"{entry_id}_{slug}_status"
+        self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{slug}_status"
         self._attr_translation_key = slug
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device information for this sensor."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._entry_id)},
-            translation_key="hotspot" if self._callsign else "hotspot_unknown",
-            translation_placeholders={"callsign": self._callsign or ""},
-            manufacturer="WPSD",
-            model="WPSD Hotspot",
-        )
 
     @property
     def native_value(self) -> str | None:
         """Return the mode status, or None if WPSD reports an unrecognised one."""
-        data: dict[str, Any] | None = self.coordinator.data
-        if data is None:
-            return None
-        status = data.get("modes", {}).get(self._mode)
+        status = self.coordinator.data.modes.get(self._mode)
         return status if status in MODE_STATES else None
 
     @property
     def extra_state_attributes(self) -> dict[str, str]:
         """Return the mode's network status, if WPSD reports one."""
-        data: dict[str, Any] | None = self.coordinator.data
-        if data is None:
-            return {}
-        network_status = data.get("networks", {}).get(f"{self._mode} Net")
+        network_status = self.coordinator.data.networks.get(f"{self._mode} Net")
         return {"network_status": network_status} if network_status else {}

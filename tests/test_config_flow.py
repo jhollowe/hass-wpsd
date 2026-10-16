@@ -106,7 +106,6 @@ async def test_user_flow_aborts_for_duplicate_host(
     assert result["reason"] == "already_configured"
 
 
-# ---- options ---------------------------------------------------------------
 
 
 async def test_options_flow_defaults(

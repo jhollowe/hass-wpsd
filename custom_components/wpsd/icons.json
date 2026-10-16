@@ -1,0 +1,39 @@
+{
+  "entity": {
+    "sensor": {
+      "active_mode": {
+        "default": "mdi:radio"
+      },
+      "firmware": {
+        "default": "mdi:information"
+      },
+      "tx_freq": {
+        "default": "mdi:radio-tower"
+      },
+      "rx_freq": {
+        "default": "mdi:radio-tower"
+      },
+      "cpu_load": {
+        "default": "mdi:cpu-monitor"
+      },
+      "disk_usage_root": {
+        "default": "mdi:harddisk"
+      },
+      "disk_used_root": {
+        "default": "mdi:harddisk"
+      },
+      "disk_total_root": {
+        "default": "mdi:harddisk"
+      },
+      "disk_usage_varlog": {
+        "default": "mdi:harddisk"
+      },
+      "disk_used_varlog": {
+        "default": "mdi:harddisk"
+      },
+      "disk_total_varlog": {
+        "default": "mdi:harddisk"
+      }
+    }
+  }
+}

@@ -11,7 +11,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.wpsd.const import CONF_MODE_SCAN_INTERVAL, DOMAIN
+from custom_components.wpsd.const import (
+    CONF_MODE_SCAN_INTERVAL,
+    CONF_SYSTEM_SCAN_INTERVAL,
+    DOMAIN,
+)
 
 
 def device_for(hass: HomeAssistant, entry: MockConfigEntry):
@@ -31,12 +35,11 @@ async def test_setup_and_unload(
 ) -> None:
     await setup_entry(hass, mock_config_entry)
     assert mock_config_entry.state is ConfigEntryState.LOADED
-    assert mock_config_entry.entry_id in hass.data[DOMAIN]
+    assert mock_config_entry.runtime_data is not None
 
     await hass.config_entries.async_unload(mock_config_entry.entry_id)
     await hass.async_block_till_done()
     assert mock_config_entry.state is ConfigEntryState.NOT_LOADED
-    assert mock_config_entry.entry_id not in hass.data[DOMAIN]
 
 
 async def test_callsign_fetched_once_at_setup(
@@ -44,7 +47,7 @@ async def test_callsign_fetched_once_at_setup(
 ) -> None:
     await setup_entry(hass, mock_config_entry)
     mock_wpsd["async_get_callsign"].assert_awaited_once()
-    assert hass.data[DOMAIN][mock_config_entry.entry_id].client.callsign == "W1AW"
+    assert mock_config_entry.runtime_data.client.callsign == "W1AW"
 
 
 async def test_setup_retries_when_host_unreachable(
@@ -120,8 +123,10 @@ async def test_changing_options_reloads_entry(
     callsign: AsyncMock = mock_wpsd["async_get_callsign"]
     assert callsign.await_count == 1
 
-    hass.config_entries.async_update_entry(
-        mock_config_entry, options={CONF_MODE_SCAN_INTERVAL: 20}
+    result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+    await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {CONF_MODE_SCAN_INTERVAL: 20, CONF_SYSTEM_SCAN_INTERVAL: 30},
     )
     await hass.async_block_till_done()
 
