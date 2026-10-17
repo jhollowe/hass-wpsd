@@ -21,6 +21,7 @@ uv pip install \
 if [ -f pyproject.toml ]; then
   uv pip install \
     homeassistant \
+    mypy \
     pytest \
     pytest-asyncio \
     pytest-homeassistant-custom-component \

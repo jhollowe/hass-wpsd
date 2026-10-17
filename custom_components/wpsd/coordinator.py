@@ -82,7 +82,7 @@ class WpsdCoordinator[DataT](DataUpdateCoordinator[DataT]):
     async def _async_update_data(self) -> DataT:
         """Fetch data from WPSD."""
         try:
-            return await self._async_fetch()
+            data = await self._async_fetch()
         except (TimeoutError, aiohttp.ClientError) as err:
             await async_create_unreachable_issue(
                 self.hass,
@@ -94,8 +94,8 @@ class WpsdCoordinator[DataT](DataUpdateCoordinator[DataT]):
                 translation_key="cannot_connect",
                 translation_placeholders={"error": str(err) or type(err).__name__},
             ) from err
-        else:
-            async_delete_unreachable_issue(self.hass, self.config_entry.entry_id)
+        await async_delete_unreachable_issue(self.hass, self.config_entry.entry_id)
+        return data
 
     @abstractmethod
     async def _async_fetch(self) -> DataT:

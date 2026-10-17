@@ -44,6 +44,20 @@
       "problemMatcher": []
     },
     {
+      "label": "Mypy",
+      "type": "shell",
+      "command": "${command:python.interpreterPath} -m mypy custom_components/wpsd",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Install Requirements",
       "type": "shell",
       "command": "uv pip install -e . colorlog --upgrade --config-settings editable_mode=compat",
