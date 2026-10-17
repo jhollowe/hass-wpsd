@@ -144,6 +144,7 @@ SENSORS: tuple[WpsdSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.FREQUENCY,
         native_unit_of_measurement=UnitOfFrequency.MEGAHERTZ,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=6,
         value_fn=lambda data: _first_number(data.tx_freq),
     ),
     WpsdSensorEntityDescription(
@@ -152,6 +153,7 @@ SENSORS: tuple[WpsdSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.FREQUENCY,
         native_unit_of_measurement=UnitOfFrequency.MEGAHERTZ,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=6,
         value_fn=lambda data: _first_number(data.rx_freq),
     ),
     WpsdSensorEntityDescription(
