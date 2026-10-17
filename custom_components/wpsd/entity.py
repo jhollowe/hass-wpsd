@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.const import CONF_URL
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -29,7 +28,7 @@ class WpsdEntity[CoordinatorT: WpsdCoordinator[Any]](CoordinatorEntity[Coordinat
             translation_placeholders={"callsign": callsign or ""},
             manufacturer="WPSD",
             model="WPSD Hotspot",
-            configuration_url=coordinator.config_entry.data[CONF_URL],
+            configuration_url=coordinator.client.base_url,
         )
         if sw_version:
             device_info["sw_version"] = sw_version

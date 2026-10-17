@@ -73,6 +73,10 @@ class WpsdClient:
         self.callsign: str | None = None
         self.dashboard_version: str | None = None
 
+    @property
+    def base_url(self):
+        return self._base_url
+
     async def _async_get_json(self, endpoint: str) -> Any:
         """Fetch JSON from an endpoint."""
         async with asyncio.timeout(REQUEST_TIMEOUT):

@@ -1,6 +1,6 @@
 [project]
 name = "hass-wpsd"
-version = "0.0.0"
+version = "0.1.0"
 description = "Home Assistant integration for WPSD digital radio hotspot software"
 readme = "README.md"
 license = "MIT"
