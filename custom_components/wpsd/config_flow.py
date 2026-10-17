@@ -98,10 +98,19 @@ class WpsdConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         try:
             await client.async_get_last_heard(limit=1)
-        except aiohttp.ClientError, TimeoutError:
+        except (aiohttp.ClientError, TimeoutError) as err:
+            LOGGER.error(
+                "Error connecting to WPSD at %s: %s",
+                user_input[CONF_URL],
+                str(err) or type(err).__name__,
+            )
             return {"base": "cannot_connect"}
-        except Exception:  # noqa: BLE001
-            LOGGER.exception("Unexpected error")
+        except Exception as err:  # noqa: BLE001
+            LOGGER.exception(
+                "Unexpected error connecting to WPSD at %s: %s",
+                user_input[CONF_URL],
+                str(err) or type(err).__name__,
+            )
             return {"base": "unknown"}
         return {}
 

@@ -31,8 +31,6 @@ Bronze through Gold were checked by hand against core's rules, and `strict-typin
 
 - implement adding talkgroup/TS1/TS2/etc data as attributes on the mode sensors
 - allow a mode polling speed in seconds
-- support HTTPS WPSD hosts
-- check simplex gets correctly parsed
 - check that APRS shows up
 - test with more active repeater(s):
   - w0jrw.hopto.org
