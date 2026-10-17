@@ -44,6 +44,9 @@ NETWORKS: dict[str, str] = {
     "YSF Net": "paused",
 }
 
+DMR_ID = "1234567"
+DMR_CC = "1"
+
 
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
@@ -74,6 +77,8 @@ def mock_wpsd() -> Generator[dict[str, AsyncMock | MagicMock]]:
         "parse_modes_with_network": MagicMock(
             return_value=(dict(MODES), dict(NETWORKS))
         ),
+        "_parse_dmr_id": MagicMock(return_value=DMR_ID),
+        "_parse_dmr_cc": MagicMock(return_value=DMR_CC),
     }
     with patch.multiple(CLIENT, **mocks):
         yield mocks

@@ -9,7 +9,7 @@ from pytest_homeassistant_custom_component.components.diagnostics import (
 )
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
-from .conftest import CALLSIGN, MODES, NETWORKS
+from .conftest import CALLSIGN, DMR_CC, DMR_ID, MODES, NETWORKS
 
 
 async def test_diagnostics(
@@ -28,5 +28,10 @@ async def test_diagnostics(
 
     assert result["entry"] == {"url": "http://wpsd.local"}
     assert result["callsign"] == CALLSIGN
-    assert result["modes"] == {"modes": MODES, "networks": NETWORKS}
+    assert result["modes"] == {
+        "modes": MODES,
+        "networks": NETWORKS,
+        "dmr_id": DMR_ID,
+        "dmr_cc": DMR_CC,
+    }
     assert result["system"]["modem_firmware"] == "MMDVM_HS_Hat-v1.6.1"

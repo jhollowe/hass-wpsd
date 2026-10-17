@@ -202,6 +202,38 @@ class WpsdClient:
         return None
 
     @staticmethod
+    def _parse_dmr_id(html: str) -> str | None:
+        """Parse the DMR ID from repeaterinfo.php HTML.
+
+        The DMR ID is rendered as a status-pill with span text "DMR ID"
+        and the value in a .pill-value span.
+        """
+        soup = BeautifulSoup(html, "html.parser")
+        for pill in soup.select("div.status-pill"):
+            span = pill.find("span")
+            if span and span.get_text(strip=True) == "DMR ID":
+                value_span = pill.select_one("span.pill-value")
+                if value_span:
+                    return value_span.get_text(strip=True) or None
+        return None
+
+    @staticmethod
+    def _parse_dmr_cc(html: str) -> str | None:
+        """Parse the DMR Color Code (CC) from repeaterinfo.php HTML.
+
+        The CC is rendered as a status-pill with span text "CC"
+        and the value in a .pill-value span.
+        """
+        soup = BeautifulSoup(html, "html.parser")
+        for pill in soup.select("div.status-pill"):
+            span = pill.find("span")
+            if span and span.get_text(strip=True) == "CC":
+                value_span = pill.select_one("span.pill-value")
+                if value_span:
+                    return value_span.get_text(strip=True) or None
+        return None
+
+    @staticmethod
     def _normalize_frequency(text: str) -> str:
         """Normalize a frequency string, collapsing extra decimal points.
 

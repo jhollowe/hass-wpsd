@@ -23,7 +23,7 @@ from custom_components.wpsd.const import (
     MODE_STATES,
 )
 
-from .conftest import HOMEPAGE_DATA, MODES, NETWORKS, RADIO_DATA
+from .conftest import DMR_CC, DMR_ID, HOMEPAGE_DATA, MODES, NETWORKS, RADIO_DATA
 
 
 async def setup_entry(hass: HomeAssistant, entry: MockConfigEntry) -> None:
@@ -193,6 +193,15 @@ async def test_mode_sensor_network_status_attribute(
     assert dmr.attributes["network_status"] == NETWORKS["DMR Net"]
     ysf = hass.states.get(entity_id(hass, mock_config_entry, "ysf_status"))
     assert ysf.attributes["network_status"] == NETWORKS["YSF Net"]
+
+
+async def test_mode_sensor_dmr_id_and_cc_attributes(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry, mock_wpsd
+) -> None:
+    await setup_entry(hass, mock_config_entry)
+    dmr = hass.states.get(entity_id(hass, mock_config_entry, "dmr_status"))
+    assert dmr.attributes["dmr_id"] == DMR_ID
+    assert dmr.attributes["dmr_cc"] == DMR_CC
 
 
 async def test_mode_sensor_without_network_has_no_attribute(

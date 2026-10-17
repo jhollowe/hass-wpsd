@@ -24,7 +24,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .client import DiskUsage
-from .const import ALL_MODES, MODE_STATES
+from .const import ALL_MODES, MODE_DMR, MODE_STATES
 from .coordinator import (
     WpsdConfigEntry,
     WpsdModeCoordinator,
@@ -227,4 +227,12 @@ class WpsdModeSensor(WpsdEntity[WpsdModeCoordinator], SensorEntity):
     def extra_state_attributes(self) -> dict[str, str]:
         """Return the mode's network status, if WPSD reports one."""
         network_status = self.coordinator.data.networks.get(f"{self._mode} Net")
-        return {"network_status": network_status} if network_status else {}
+        attrs: dict[str, str] = {}
+        if network_status:
+            attrs["network_status"] = network_status
+        if self._mode == MODE_DMR:
+            if self.coordinator.data.dmr_id:
+                attrs["dmr_id"] = self.coordinator.data.dmr_id
+            if self.coordinator.data.dmr_cc:
+                attrs["dmr_cc"] = self.coordinator.data.dmr_cc
+        return attrs

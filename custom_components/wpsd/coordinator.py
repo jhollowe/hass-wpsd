@@ -50,6 +50,8 @@ class WpsdModeData:
 
     modes: dict[str, str]
     networks: dict[str, str]
+    dmr_id: str | None
+    dmr_cc: str | None
 
 
 class WpsdCoordinator[DataT](DataUpdateCoordinator[DataT]):
@@ -165,7 +167,12 @@ class WpsdModeCoordinator(WpsdCoordinator[WpsdModeData]):
         modes, networks = await self.hass.async_add_executor_job(
             self.client.parse_modes_with_network, html
         )
-        return WpsdModeData(modes=modes, networks=networks)
+        return WpsdModeData(
+            modes=modes,
+            networks=networks,
+            dmr_id=WpsdClient._parse_dmr_id(html),
+            dmr_cc=WpsdClient._parse_dmr_cc(html),
+        )
 
 
 @dataclass
