@@ -223,26 +223,6 @@ def test_parse_callsign_without_separator() -> None:
     assert WpsdClient._parse_callsign("<title>N0CALL</title>") == "N0CALL"
 
 
-def test_parse_dashboard_version_is_git_hash() -> None:
-    assert WpsdClient._parse_dashboard_version("abc1234def") == "abc1234def"
-
-
-def test_parse_dashboard_version_ignores_branch_suffix() -> None:
-    assert WpsdClient._parse_dashboard_version("abc1234def") == "abc1234def"
-
-
-@pytest.mark.parametrize(
-    "html",
-    [
-        "",
-        "   ",
-        "\n",
-    ],
-)
-def test_parse_dashboard_version_missing(html: str) -> None:
-    assert WpsdClient._parse_dashboard_version(html) is None
-
-
 def test_parse_disk_usage_root() -> None:
     assert WpsdClient._parse_disk_usage_stats(HOMEPAGE_HTML, "/") == {
         "percent": 1.99,
@@ -358,15 +338,6 @@ async def test_get_radio_data_fetches_once() -> None:
         "rx_freq": "439.800 MHz",
     }
     session.get.assert_called_once_with(f"http://wpsd.local:8080{ENDPOINT_RADIOINFO}")
-
-
-async def test_get_homepage_data_fetches_once() -> None:
-    client, session = make_client(FakeResponse(text=HOMEPAGE_HTML))
-    data = await client.async_get_homepage_data()
-    assert data["cpu_load"] == "38"
-    assert data["cpu_temp"].startswith("135°F / 57°C")
-    assert data["disk_root"]["total_gb"] == 219.56
-    session.get.assert_called_once()
 
 
 async def test_parse_hw_info_data() -> None:

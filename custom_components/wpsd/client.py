@@ -39,15 +39,6 @@ class RadioData(TypedDict):
     rx_freq: str | None
 
 
-class HomepageData(TypedDict):
-    """Values parsed from the dashboard homepage."""
-
-    cpu_load: str | None
-    cpu_temp: str | None
-    disk_root: DiskUsage | None
-    disk_varlog: DiskUsage | None
-
-
 class HWInfoData(TypedDict):
     """Values parsed from includes/hw_info.php."""
 
@@ -104,10 +95,6 @@ class WpsdClient:
         """Fetch radioinfo.php HTML."""
         return await self._async_get_text(ENDPOINT_RADIOINFO)
 
-    async def async_get_homepage_html(self) -> str:
-        """Fetch homepage HTML."""
-        return await self._async_get_text(ENDPOINT_HOMEPAGE)
-
     async def async_get_repeater_html(self) -> str:
         """Fetch repeaterinfo.php HTML."""
         return await self._async_get_text(ENDPOINT_REPEATERINFO)
@@ -123,21 +110,6 @@ class WpsdClient:
             "firmware": WpsdClient._parse_firmware(html),
             "tx_freq": WpsdClient._parse_tx_freq(html),
             "rx_freq": WpsdClient._parse_rx_freq(html),
-        }
-
-    @staticmethod
-    def parse_homepage_data(html: str) -> HomepageData:
-        """Parse homepage HTML into a HomepageData dict.
-
-        Runs in the executor because BeautifulSoup parsing is CPU-bound.
-        """
-        disk_root = WpsdClient._parse_disk_usage_stats(html, "/")
-        disk_varlog = WpsdClient._parse_disk_usage_stats(html, "/var/log")
-        return {
-            "cpu_load": WpsdClient._parse_cpu_load(html),
-            "cpu_temp": WpsdClient._parse_cpu_temp(html),
-            "disk_root": disk_root,
-            "disk_varlog": disk_varlog,
         }
 
     @staticmethod
@@ -159,15 +131,6 @@ class WpsdClient:
         """
         html = await self.async_get_radio_html()
         return self.parse_radio_data(html)
-
-    async def async_get_homepage_data(self) -> HomepageData:
-        """Fetch the homepage once and return all parsed dashboard data.
-
-        Returns a dict with keys: dashboard_version, cpu_load, cpu_temp,
-        disk_root, disk_varlog.
-        """
-        html = await self.async_get_homepage_html()
-        return self.parse_homepage_data(html)
 
     async def async_get_hw_info_html(self) -> str:
         """Fetch hw_info.php HTML."""
@@ -209,7 +172,7 @@ class WpsdClient:
 
     async def async_get_callsign(self) -> str | None:
         """Get the hotspot callsign from the homepage title."""
-        return self._parse_callsign(await self.async_get_homepage_html())
+        return self._parse_callsign(await self._async_get_text(ENDPOINT_HOMEPAGE))
 
     @staticmethod
     def _parse_radio_status(html: str) -> str:
@@ -384,7 +347,7 @@ class WpsdClient:
 
     @staticmethod
     def _parse_disk_usage_stats(html: str, mount: str) -> DiskUsage | None:
-        """Parse disk usage stats for a given mount point from homepage HTML.
+        """Parse disk usage stats for a given mount point from hw_info HTML.
 
         The "Disk Usage" card shows the root filesystem as "<used> / <total>".
         Its tooltip lists /var/log as "<strong>/var/log (tmpfs):</strong>
