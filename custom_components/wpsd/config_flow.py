@@ -12,7 +12,7 @@ from homeassistant.config_entries import (
     OptionsFlow,
     OptionsFlowWithReload,
 )
-from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.const import CONF_URL
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
@@ -21,7 +21,6 @@ from .const import (
     CONF_MODE_SCAN_INTERVAL,
     CONF_SYSTEM_SCAN_INTERVAL,
     DEFAULT_MODE_SCAN_INTERVAL,
-    DEFAULT_PORT,
     DEFAULT_SYSTEM_SCAN_INTERVAL,
     DOMAIN,
     LOGGER,
@@ -32,8 +31,7 @@ from .coordinator import WpsdConfigEntry
 
 STEP_USER_DATA_SCHEMA = probatio.Schema(
     {
-        probatio.Required(CONF_HOST): str,
-        probatio.Required(CONF_PORT, default=DEFAULT_PORT): int,
+        probatio.Required(CONF_URL): str,
     }
 )
 
@@ -55,10 +53,10 @@ class WpsdConfigFlow(ConfigFlow, domain=DOMAIN):
         """Handle the initial step."""
         errors: dict[str, str] = {}
         if user_input is not None:
-            self._async_abort_entries_match({CONF_HOST: user_input[CONF_HOST]})
+            self._async_abort_entries_match({CONF_URL: user_input[CONF_URL]})
             if not (errors := await self._async_test_connection(user_input)):
                 return self.async_create_entry(
-                    title=user_input[CONF_HOST], data=user_input
+                    title=user_input[CONF_URL], data=user_input
                 )
 
         return self.async_show_form(
@@ -76,10 +74,10 @@ class WpsdConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         entry = self._get_reconfigure_entry()
         if user_input is not None:
-            self._async_abort_entries_match({CONF_HOST: user_input[CONF_HOST]})
+            self._async_abort_entries_match({CONF_URL: user_input[CONF_URL]})
             if not (errors := await self._async_test_connection(user_input)):
                 return self.async_update_reload_and_abort(
-                    entry, title=user_input[CONF_HOST], data=user_input
+                    entry, title=user_input[CONF_URL], data=user_input
                 )
 
         return self.async_show_form(
@@ -95,8 +93,7 @@ class WpsdConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> dict[str, str]:
         """Return form errors if the dashboard can't be reached."""
         client = WpsdClient(
-            host=user_input[CONF_HOST],
-            port=user_input[CONF_PORT],
+            url=user_input[CONF_URL],
             session=async_create_clientsession(self.hass),
         )
         try:

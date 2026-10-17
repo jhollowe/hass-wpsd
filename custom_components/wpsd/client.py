@@ -47,18 +47,25 @@ class HomepageData(TypedDict):
     disk_varlog: DiskUsage | None
 
 
+def _normalize_url(url: str) -> str:
+    """Normalize a URL, adding http:// scheme if missing."""
+    # TODO is there a lib to do this?
+    if not url.startswith(("http://", "https://")):
+        url = f"http://{url}"
+    return url.rstrip("/")
+
+
 class WpsdClient:
     """Client for WPSD API and HTML endpoints."""
 
     def __init__(
         self,
-        host: str,
-        port: int,
+        url: str,
         session: aiohttp.ClientSession,
     ) -> None:
         """Initialize the WPSD client."""
         self._session = session
-        self._base_url = f"http://{host}:{port}"
+        self._base_url = _normalize_url(url)
         self.callsign: str | None = None
 
     async def _async_get_json(self, endpoint: str) -> Any:

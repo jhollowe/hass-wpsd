@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 import aiohttp
 import pytest
 from homeassistant.config_entries import SOURCE_USER
-from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.const import CONF_URL
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType, InvalidData
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -23,7 +23,7 @@ from custom_components.wpsd.const import (
 LAST_HEARD = "custom_components.wpsd.config_flow.WpsdClient.async_get_last_heard"
 SETUP_ENTRY = "custom_components.wpsd.async_setup_entry"
 
-USER_INPUT = {CONF_HOST: "wpsd.local", CONF_PORT: 8080}
+USER_INPUT = {CONF_URL: "http://wpsd.local:8080"}
 
 
 async def test_user_flow_creates_entry(hass: HomeAssistant) -> None:
@@ -42,22 +42,8 @@ async def test_user_flow_creates_entry(hass: HomeAssistant) -> None:
         )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == "wpsd.local"
+    assert result["title"] == "http://wpsd.local:8080"
     assert result["data"] == USER_INPUT
-
-
-async def test_user_flow_port_defaults_to_80(hass: HomeAssistant) -> None:
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": SOURCE_USER}
-    )
-    with (
-        patch(LAST_HEARD, AsyncMock(return_value=[])),
-        patch(SETUP_ENTRY, AsyncMock(return_value=True)),
-    ):
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_HOST: "wpsd.local"}
-        )
-    assert result["data"][CONF_PORT] == 80
 
 
 @pytest.mark.parametrize(
@@ -100,7 +86,7 @@ async def test_user_flow_aborts_for_duplicate_host(
     )
     with patch(LAST_HEARD, AsyncMock(return_value=[])):
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_HOST: "wpsd.local", CONF_PORT: 80}
+            result["flow_id"], {CONF_URL: "http://wpsd.local"}
         )
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "already_configured"
@@ -124,7 +110,7 @@ async def test_options_flow_defaults(
 async def test_options_flow_shows_saved_values(hass: HomeAssistant) -> None:
     entry = MockConfigEntry(
         domain=DOMAIN,
-        data={CONF_HOST: "slow.local", CONF_PORT: 80},
+        data={CONF_URL: "http://slow.local"},
         options={CONF_MODE_SCAN_INTERVAL: 20, CONF_SYSTEM_SCAN_INTERVAL: 120},
     )
     entry.add_to_hass(hass)
@@ -174,13 +160,13 @@ async def test_reconfigure_updates_entry(
         patch(SETUP_ENTRY, AsyncMock(return_value=True)),
     ):
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_HOST: "new.local", CONF_PORT: 8080}
+            result["flow_id"], {CONF_URL: "https://new.local:8443"}
         )
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reconfigure_successful"
-    assert mock_config_entry.data == {CONF_HOST: "new.local", CONF_PORT: 8080}
-    assert mock_config_entry.title == "new.local"
+    assert mock_config_entry.data == {CONF_URL: "https://new.local:8443"}
+    assert mock_config_entry.title == "https://new.local:8443"
 
 
 async def test_reconfigure_error_then_recovers(
@@ -208,14 +194,12 @@ async def test_reconfigure_error_then_recovers(
 async def test_reconfigure_aborts_for_host_of_other_entry(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry
 ) -> None:
-    other = MockConfigEntry(
-        domain=DOMAIN, data={CONF_HOST: "other.local", CONF_PORT: 80}
-    )
+    other = MockConfigEntry(domain=DOMAIN, data={CONF_URL: "http://other.local"})
     other.add_to_hass(hass)
     mock_config_entry.add_to_hass(hass)
     result = await mock_config_entry.start_reconfigure_flow(hass)
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {CONF_HOST: "other.local", CONF_PORT: 80}
+        result["flow_id"], {CONF_URL: "http://other.local"}
     )
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "already_configured"

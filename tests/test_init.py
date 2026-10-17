@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock
 
 import aiohttp
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.const import CONF_URL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -99,9 +99,7 @@ async def test_device_named_wpsd_without_callsign(
 async def test_two_hotspots_get_separate_devices(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry, mock_wpsd
 ) -> None:
-    other = MockConfigEntry(
-        domain=DOMAIN, data={CONF_HOST: "other.local", CONF_PORT: 80}
-    )
+    other = MockConfigEntry(domain=DOMAIN, data={CONF_URL: "http://other.local"})
     await setup_entry(hass, mock_config_entry)
     await setup_entry(hass, other)
     assert mock_config_entry.state is ConfigEntryState.LOADED

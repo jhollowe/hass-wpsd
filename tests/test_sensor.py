@@ -6,7 +6,7 @@ from datetime import timedelta
 
 import aiohttp
 import pytest
-from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import CONF_URL, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
@@ -236,7 +236,7 @@ async def test_missing_mode_does_not_break_setup(
 async def test_unique_ids_are_per_config_entry(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry, mock_wpsd
 ) -> None:
-    other = MockConfigEntry(domain=DOMAIN, data={"host": "other.local", "port": 80})
+    other = MockConfigEntry(domain=DOMAIN, data={CONF_URL: "http://other.local"})
     await setup_entry(hass, mock_config_entry)
     await setup_entry(hass, other)
     assert entity_id(hass, mock_config_entry, "dmr_status") != entity_id(
@@ -283,7 +283,7 @@ async def test_slower_per_device_interval_is_respected(
     """A device configured for a longer interval is not polled at the default."""
     entry = MockConfigEntry(
         domain=DOMAIN,
-        data={"host": "slow.local", "port": 80},
+        data={CONF_URL: "http://slow.local"},
         options={CONF_MODE_SCAN_INTERVAL: 120, CONF_SYSTEM_SCAN_INTERVAL: 600},
     )
     await setup_entry(hass, entry)

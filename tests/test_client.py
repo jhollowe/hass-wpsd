@@ -106,7 +106,7 @@ def make_client(response: FakeResponse | Exception) -> tuple[WpsdClient, MagicMo
         session.get.side_effect = response
     else:
         session.get.return_value = response
-    return WpsdClient("wpsd.local", 8080, session), session
+    return WpsdClient("http://wpsd.local:8080", session), session
 
 
 def test_parse_radio_status() -> None:

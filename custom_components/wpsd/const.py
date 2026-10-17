@@ -7,8 +7,6 @@ DOMAIN: Final = "wpsd"
 
 LOGGER = logging.getLogger(__package__)
 
-DEFAULT_PORT: Final = 80
-
 ENDPOINT_API: Final = "/api/"
 ENDPOINT_HOMEPAGE: Final = "/"
 ENDPOINT_RADIOINFO: Final = "/mmdvmhost/radioinfo.php"
@@ -42,6 +40,7 @@ MODE_STATES: Final[list[str]] = [
     MODE_STATE_PAUSED,
 ]
 
+CONF_URL: Final = "url"
 CONF_MODE_SCAN_INTERVAL: Final = "mode_scan_interval"
 CONF_SYSTEM_SCAN_INTERVAL: Final = "system_scan_interval"
 DEFAULT_MODE_SCAN_INTERVAL: Final = 5

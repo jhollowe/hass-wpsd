@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import aiohttp
-from homeassistant.const import CONF_HOST, CONF_PORT, Platform
+from homeassistant.const import CONF_URL, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -23,8 +23,7 @@ PLATFORMS: list[Platform] = [Platform.SENSOR]
 async def async_setup_entry(hass: HomeAssistant, entry: WpsdConfigEntry) -> bool:
     """Set up WPSD from a config entry."""
     client = WpsdClient(
-        host=entry.data[CONF_HOST],
-        port=entry.data[CONF_PORT],
+        url=entry.data[CONF_URL],
         session=async_get_clientsession(hass),
     )
 

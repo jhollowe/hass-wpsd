@@ -11,7 +11,7 @@ ISSUE_UNREACHABLE = "hotspot_unreachable"
 
 
 async def async_create_unreachable_issue(
-    hass: HomeAssistant, entry_id: str, host: str
+    hass: HomeAssistant, entry_id: str, url: str
 ) -> None:
     """Create a repair issue when the hotspot is unreachable."""
     ir.async_create_issue(
@@ -21,7 +21,7 @@ async def async_create_unreachable_issue(
         is_fixable=False,
         severity=ir.IssueSeverity.WARNING,
         translation_key="hotspot_unreachable",
-        translation_placeholders={"host": host},
+        translation_placeholders={"url": url},
         learn_more_url="https://github.com/jhollowe/hass-wpsd",
         data={"entry_id": entry_id},
     )

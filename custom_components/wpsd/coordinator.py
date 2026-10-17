@@ -87,7 +87,7 @@ class WpsdCoordinator[DataT](DataUpdateCoordinator[DataT]):
             async_create_unreachable_issue(
                 self.hass,
                 self.config_entry.entry_id,
-                self.config_entry.data.get("host", ""),
+                self.config_entry.data.get("url", ""),
             )
             raise UpdateFailed(
                 translation_domain=DOMAIN,

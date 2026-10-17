@@ -7,7 +7,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.const import CONF_URL
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.wpsd.const import DOMAIN
@@ -57,7 +57,7 @@ def mock_config_entry() -> MockConfigEntry:
     return MockConfigEntry(
         domain=DOMAIN,
         title="wpsd.local",
-        data={CONF_HOST: "wpsd.local", CONF_PORT: 80},
+        data={CONF_URL: "http://wpsd.local"},
     )
 
 

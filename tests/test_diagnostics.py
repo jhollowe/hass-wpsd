@@ -26,7 +26,7 @@ async def test_diagnostics(
         hass, hass_client, mock_config_entry
     )
 
-    assert result["entry"] == {"host": "**REDACTED**", "port": 80}
+    assert result["entry"] == {"url": "http://wpsd.local"}
     assert result["callsign"] == CALLSIGN
     assert result["modes"] == {"modes": MODES, "networks": NETWORKS}
     assert result["system"]["firmware"] == "MMDVM_HS_Hat-v1.6.1"

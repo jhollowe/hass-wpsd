@@ -4,15 +4,13 @@
       "user": {
         "title": "Connect to WPSD",
         "data": {
-          "host": "[%key:common::config_flow::data::host%]",
-          "port": "[%key:common::config_flow::data::port%]"
+          "url": "[%key:common::config_flow::data::url%]"
         }
       },
       "reconfigure": {
         "title": "Reconfigure WPSD",
         "data": {
-          "host": "[%key:common::config_flow::data::host%]",
-          "port": "[%key:common::config_flow::data::port%]"
+          "url": "[%key:common::config_flow::data::url%]"
         }
       }
     },
@@ -212,7 +210,7 @@
   "repairs": {
     "hotspot_unreachable": {
       "title": "WPSD hotspot unreachable",
-      "description": "The WPSD hotspot at {host} cannot be reached. Check the hotspot's power and network connection."
+      "description": "The WPSD hotspot at {url} cannot be reached. Check the hotspot's power and network connection."
     }
   }
 }
