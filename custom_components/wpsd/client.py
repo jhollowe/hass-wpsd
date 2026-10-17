@@ -22,6 +22,7 @@ from .const import (
 REQUEST_TIMEOUT = 10
 
 _FAHRENHEIT_TEMP = re.compile(r"([\d.]+)°F")
+_DASHBOARD_VERSION_RE = re.compile(r"(?:Version #|Ver\.#)\s*([\w]+)")
 
 
 class DiskUsage(TypedDict):
@@ -348,10 +349,21 @@ class WpsdClient:
     async def async_get_dashboard_version(self) -> str | None:
         """Get the WPSD dashboard version from includes/checkupdates.php.
 
-        This endpoint returns just the version string (git short hash) and
-        is fetched only once on integration load.
+        This endpoint returns HTML like
+        ``<span title='WPSD Dashboard Version # 1e76fbbfa8'>
+        WPSD Dashboard Ver.# 1e76fbbfa8</span>``.
+        Only the git short hash is extracted.
         """
         text = await self._async_get_text(ENDPOINT_CHECKUPDATES)
+        if not text:
+            return None
+        soup = BeautifulSoup(text, "html.parser")
+        span = soup.find("span")
+        if span is not None:
+            text = span.get_text(strip=True)
+        match = _DASHBOARD_VERSION_RE.search(text)
+        if match:
+            return match.group(1)
         return text.strip() or None
 
     @staticmethod
