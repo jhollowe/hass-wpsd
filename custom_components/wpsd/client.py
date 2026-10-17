@@ -10,12 +10,11 @@ import aiohttp
 from bs4 import BeautifulSoup
 
 from .const import (
-    DEFAULT_PORT,
-    LOGGER,
     ENDPOINT_API,
     ENDPOINT_HOMEPAGE,
     ENDPOINT_RADIOINFO,
     ENDPOINT_REPEATERINFO,
+    LOGGER,
 )
 
 REQUEST_TIMEOUT = 10
@@ -266,7 +265,9 @@ class WpsdClient:
         """Parse the WPSD dashboard version (git short hash) from homepage HTML.
 
         The dashboard renders it as:
-        <span title='WPSD Dashboard Version # abc1234def'>WPSD Dashboard Ver.# abc1234def</span>
+        <span title='WPSD Dashboard Version # abc1234def'>
+        WPSD Dashboard Ver.# abc1234def
+        </span>
         """
         prefix = "WPSD Dashboard Ver"
         soup = BeautifulSoup(html, "html.parser")

@@ -106,8 +106,6 @@ async def test_user_flow_aborts_for_duplicate_host(
     assert result["reason"] == "already_configured"
 
 
-
-
 async def test_options_flow_defaults(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry
 ) -> None:

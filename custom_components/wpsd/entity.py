@@ -11,13 +11,13 @@ from .const import DOMAIN
 from .coordinator import WpsdCoordinator
 
 
-class WpsdEntity[_CoordinatorT: WpsdCoordinator[Any]](CoordinatorEntity[_CoordinatorT]):
+class WpsdEntity[CoordinatorT: WpsdCoordinator[Any]](CoordinatorEntity[CoordinatorT]):
     """Base entity attached to the hotspot's device."""
 
     _attr_has_entity_name = True
 
     def __init__(
-        self, coordinator: _CoordinatorT, sw_version: str | None = None
+        self, coordinator: CoordinatorT, sw_version: str | None = None
     ) -> None:
         """Initialize the entity and describe the hotspot's device."""
         super().__init__(coordinator)

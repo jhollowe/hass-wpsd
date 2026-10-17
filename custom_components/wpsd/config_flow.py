@@ -90,7 +90,9 @@ class WpsdConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def _async_test_connection(self, user_input: dict[str, Any]) -> dict[str, str]:
+    async def _async_test_connection(
+        self, user_input: dict[str, Any]
+    ) -> dict[str, str]:
         """Return form errors if the dashboard can't be reached."""
         client = WpsdClient(
             host=user_input[CONF_HOST],

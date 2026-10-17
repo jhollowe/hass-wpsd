@@ -45,19 +45,19 @@ WPSD dashboard shows.
 
 | Location | Name                   | Enabled by default | Primary value                                                 | Additional Information | Comments                                                                                                                                                              |
 | -------- | ---------------------- | :----------------: | ------------------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Device   | Active Mode            |         ✔️          | Current radio status text shown by the dashboard              |                        |                                                                                                                                                                       |
-| Device   | Modem Firmware Version |         ✔️          | Firmware version of the modem                                 |                        |                                                                                                                                                                       |
-| Device   | TX Frequency           |         ✔️          | Transmit frequency in MHz                                     |                        |                                                                                                                                                                       |
-| Device   | RX Frequency           |         ✔️          | Receive frequency in MHz                                      |                        |                                                                                                                                                                       |
-| Device   | CPU Load               |         ✔️          | CPU load in %                                                 |                        |                                                                                                                                                                       |
-| Device   | CPU Temperature        |         ✔️          | CPU temperature in °C                                         |                        |                                                                                                                                                                       |
-| Device   | / Disk Usage           |         ✔️          | Usage of the `/` filesystem in %                              |                        |                                                                                                                                                                       |
+| Device   | Active Mode            |         ✔️         | Current radio status text shown by the dashboard              |                        |                                                                                                                                                                       |
+| Device   | Modem Firmware Version |         ✔️         | Firmware version of the modem                                 |                        |                                                                                                                                                                       |
+| Device   | TX Frequency           |         ✔️         | Transmit frequency in MHz                                     |                        |                                                                                                                                                                       |
+| Device   | RX Frequency           |         ✔️         | Receive frequency in MHz                                      |                        |                                                                                                                                                                       |
+| Device   | CPU Load               |         ✔️         | CPU load in %                                                 |                        |                                                                                                                                                                       |
+| Device   | CPU Temperature        |         ✔️         | CPU temperature in °C                                         |                        |                                                                                                                                                                       |
+| Device   | / Disk Usage           |         ✔️         | Usage of the `/` filesystem in %                              |                        |                                                                                                                                                                       |
 | Device   | / Disk Used            |                    | Space used on `/` in GB                                       |                        |                                                                                                                                                                       |
 | Device   | / Disk Total           |                    | Size of `/` in GB                                             |                        |                                                                                                                                                                       |
-| Device   | /var/log Disk Usage    |         ✔️          | Usage of the `/var/log` filesystem in %                       |                        |                                                                                                                                                                       |
+| Device   | /var/log Disk Usage    |         ✔️         | Usage of the `/var/log` filesystem in %                       |                        |                                                                                                                                                                       |
 | Device   | /var/log Disk Used     |                    | Space used on `/var/log` in GB                                |                        |                                                                                                                                                                       |
 | Device   | /var/log Disk Total    |                    | Size of `/var/log` in GB                                      |                        |                                                                                                                                                                       |
-| Mode     | D-Star                 |         ✔️          | Status of the mode; `active`, `inactive`, `error` or `paused` | Network status         | One sensor each for D-Star, DMR, YSF, P25, NXDN and POCSAG. Network status has the same values as the primary value and is only present if the dashboard reports one. |
+| Mode     | D-Star                 |         ✔️         | Status of the mode; `active`, `inactive`, `error` or `paused` | Network status         | One sensor each for D-Star, DMR, YSF, P25, NXDN and POCSAG. Network status has the same values as the primary value and is only present if the dashboard reports one. |
 
 ## Supported devices
 
@@ -83,9 +83,9 @@ next successful poll.
 
 ## Use cases
 
-* Show which modes are enabled, paused or in error on a dashboard.
-* Notify when a mode or its network changes to `error`.
-* Track CPU temperature and disk usage of the hotspot over time.
+- Show which modes are enabled, paused or in error on a dashboard.
+- Notify when a mode or its network changes to `error`.
+- Track CPU temperature and disk usage of the hotspot over time.
 
 ## Examples
 
@@ -108,12 +108,12 @@ Replace `sensor.w4dw_dmr` with the entity id of your hotspot's mode sensor.
 
 ## Known limitations
 
-* WPSD has no JSON status API, so the integration parses HTML. A WPSD update
+- WPSD has no JSON status API, so the integration parses HTML. A WPSD update
   that changes the dashboard markup can break individual sensors.
-* No login is used, so only data the dashboard shows publicly is available.
-* Only plain HTTP is supported.
-* Short transmissions can be missed because of the polling interval.
-* The hotspot is not discovered automatically; its host and port are entered
+- No login is used, so only data the dashboard shows publicly is available.
+- Only plain HTTP is supported.
+- Short transmissions can be missed because of the polling interval.
+- The hotspot is not discovered automatically; its host and port are entered
   manually.
 
 # Setup
@@ -123,8 +123,8 @@ Replace `sensor.w4dw_dmr` with the entity id of your hotspot's mode sensor.
 If adding the integration by clicking the `Add Integration` button the
 following information will be requested.
 
-* `Host`: The hostname or IP address of the WPSD hotspot's dashboard.
-* `Port`: The port of the dashboard web server, default `80`.
+- `Host`: The hostname or IP address of the WPSD hotspot's dashboard.
+- `Port`: The port of the dashboard web server, default `80`.
 
 The integration checks that the dashboard can be reached before it is added.
 Only plain HTTP is supported at the moment.
@@ -137,9 +137,9 @@ reloads the integration.
 
 ### Polling
 
-* `Mode status polling interval`: the frequency of updates for the mode
+- `Mode status polling interval`: the frequency of updates for the mode
   sensors, default `5s`
-* `System stats polling interval`: the frequency of updates for the other
+- `System stats polling interval`: the frequency of updates for the other
   sensors, default `30s`
 
 Both accept values from `1` to `3600` seconds. Options are set per hotspot, so

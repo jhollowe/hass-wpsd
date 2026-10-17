@@ -48,7 +48,7 @@ class WpsdModeData:
     networks: dict[str, str]
 
 
-class WpsdCoordinator[_DataT](DataUpdateCoordinator[_DataT]):
+class WpsdCoordinator[DataT](DataUpdateCoordinator[DataT]):
     """Base coordinator for polling one group of WPSD pages."""
 
     config_entry: WpsdConfigEntry
@@ -75,7 +75,7 @@ class WpsdCoordinator[_DataT](DataUpdateCoordinator[_DataT]):
         )
         self.client = client
 
-    async def _async_update_data(self) -> _DataT:
+    async def _async_update_data(self) -> DataT:
         """Fetch data from WPSD."""
         try:
             return await self._async_fetch()
@@ -87,7 +87,7 @@ class WpsdCoordinator[_DataT](DataUpdateCoordinator[_DataT]):
             ) from err
 
     @abstractmethod
-    async def _async_fetch(self) -> _DataT:
+    async def _async_fetch(self) -> DataT:
         """Fetch and parse the pages this coordinator polls."""
 
 

@@ -38,28 +38,39 @@ HOMEPAGE_HTML = """
 <div id="hwInfoTable" class="dashboard-header-stats">
   <div class="stat-card">
     <span class="stat-label">CPU Load</span>
-    <div class="stat-value"><a class="tooltip" href="#">38%<span><strong>Hardware:</strong> Pi 4 (1 of 4)</span></a></div>
+    <div class="stat-value"><a class="tooltip" href="#">38%<span>
+    <strong>Hardware:</strong> Pi 4 (1 of 4)</span></a></div>
   </div>
   <div class="stat-card">
     <span class="stat-label">CPU Temp</span>
-    <div class="stat-value"><a class="tooltip" href="#">135&deg;F / 57&deg;C<span><strong>CPU Temperature</strong></span></a></div>
+    <div class="stat-value"><a class="tooltip" href="#">135&deg;F / 57&deg;C<span>
+    <strong>CPU Temperature</strong></span></a></div>
   </div>
   <div class="stat-card">
     <span class="stat-label">Disk Usage</span>
-    <div class="stat-value"><a class="tooltip" href="#">4.37 GB / 219.56 GB<span><strong>Used:</strong> 1.99%<br><strong>/var/log (tmpfs):</strong> 12 MB / 256 MB</span></a></div>
+    <div class="stat-value"><a class="tooltip" href="#">4.37 GB / 219.56 GB<span>
+    <strong>Used:</strong> 1.99%<br>
+    <strong>/var/log (tmpfs):</strong> 12 MB / 256 MB</span></a></div>
   </div>
 </div>
 </body></html>
 """
 
 REPEATERINFO_HTML = """
-<div class='status-pill active'><span>D-Star</span><div class='pill-data'><i class='fa'></i></div></div>
-<div class='status-pill inactive'><span>DMR</span><div class='pill-data'><i class='fa'></i></div></div>
-<div class='status-pill paused'><span>YSF</span><div class='pill-data'><i class='fa'></i></div></div>
-<div class='status-pill error'><span>P25</span><div class='pill-data'><i class='fa'></i></div></div>
-<div class='status-pill active'><span>D-Star Net</span><div class='pill-data'><i class='fa'></i></div></div>
-<div class='status-pill paused'><span>DMR Net</span><div class='pill-data'><i class='fa'></i></div></div>
-<div class='status-pill bogus'><span>YSF Net</span><div class='pill-data'><i class='fa'></i></div></div>
+<div class='status-pill active'><span>D-Star</span>
+<div class='pill-data'><i class='fa'></i></div></div>
+<div class='status-pill inactive'><span>DMR</span>
+<div class='pill-data'><i class='fa'></i></div></div>
+<div class='status-pill paused'><span>YSF</span>
+<div class='pill-data'><i class='fa'></i></div></div>
+<div class='status-pill error'><span>P25</span>
+<div class='pill-data'><i class='fa'></i></div></div>
+<div class='status-pill active'><span>D-Star Net</span>
+<div class='pill-data'><i class='fa'></i></div></div>
+<div class='status-pill paused'><span>DMR Net</span>
+<div class='pill-data'><i class='fa'></i></div></div>
+<div class='status-pill bogus'><span>YSF Net</span>
+<div class='pill-data'><i class='fa'></i></div></div>
 """
 
 
@@ -96,8 +107,6 @@ def make_client(response: FakeResponse | Exception) -> tuple[WpsdClient, MagicMo
     else:
         session.get.return_value = response
     return WpsdClient("wpsd.local", 8080, session), session
-
-
 
 
 def test_parse_radio_status() -> None:
@@ -218,7 +227,9 @@ def test_parse_disk_usage_varlog_comes_from_tooltip() -> None:
 def test_parse_disk_usage_varlog_missing_from_tooltip() -> None:
     html = """
     <div class="stat-card"><span class="stat-label">Disk Usage</span>
-    <div class="stat-value"><a href="#">4.37 GB / 219.56 GB<span>no varlog</span></a></div></div>
+    <div class="stat-value">
+    <a href="#">4.37 GB / 219.56 GB<span>no varlog</span></a>
+    </div></div>
     """
     assert WpsdClient._parse_disk_usage_stats(html, "/var/log") is None
     assert WpsdClient._parse_disk_usage_stats(html, "/") is not None
@@ -271,8 +282,6 @@ def test_parse_network_status_invalid_defaults_to_inactive(
         networks = WpsdClient._parse_network_status(REPEATERINFO_HTML)
     assert networks["YSF Net"] == "inactive"
     assert "Invalid network status 'bogus' for 'YSF Net'" in caplog.text
-
-
 
 
 async def test_base_url_uses_host_and_port() -> None:

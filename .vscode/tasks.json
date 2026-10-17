@@ -16,9 +16,9 @@
       "problemMatcher": []
     },
     {
-      "label": "Pytest",
+      "label": "Pytest (with coverage)",
       "type": "shell",
-      "command": "${command:python.interpreterPath} -m pytest --timeout=10 tests",
+      "command": "${command:python.interpreterPath} -m pytest --timeout=10 --cov --cov-report=xml:coverage.xml tests",
       "group": {
         "kind": "test",
         "isDefault": true

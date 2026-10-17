@@ -3,7 +3,7 @@ name: Validate
 
 on:
   push:
-  pull_request:
+  pull_request: true
   schedule:
     - cron: "0 0 * * *"
 
