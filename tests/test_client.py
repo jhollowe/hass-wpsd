@@ -11,6 +11,7 @@ import pytest
 from custom_components.wpsd.client import WpsdClient, _convert_to_gb
 from custom_components.wpsd.const import (
     ENDPOINT_API,
+    ENDPOINT_CHECKUPDATES,
     ENDPOINT_HOMEPAGE,
     ENDPOINT_HW_INFO,
     ENDPOINT_RADIOINFO,
@@ -223,23 +224,19 @@ def test_parse_callsign_without_separator() -> None:
 
 
 def test_parse_dashboard_version_is_git_hash() -> None:
-    assert WpsdClient._parse_dashboard_version(HOMEPAGE_HTML) == "abc1234def"
+    assert WpsdClient._parse_dashboard_version("abc1234def") == "abc1234def"
 
 
 def test_parse_dashboard_version_ignores_branch_suffix() -> None:
-    html = (
-        "<span title='WPSD Dashboard Version # abc1234def'>"
-        "WPSD Dashboard Ver.# abc1234def</span> / Branch: dev"
-    )
-    assert WpsdClient._parse_dashboard_version(html) == "abc1234def"
+    assert WpsdClient._parse_dashboard_version("abc1234def") == "abc1234def"
 
 
 @pytest.mark.parametrize(
     "html",
     [
-        "<span>something else</span>",
-        "<span>WPSD Dashboard Ver.#</span>",
         "",
+        "   ",
+        "\n",
     ],
 )
 def test_parse_dashboard_version_missing(html: str) -> None:
@@ -366,7 +363,6 @@ async def test_get_radio_data_fetches_once() -> None:
 async def test_get_homepage_data_fetches_once() -> None:
     client, session = make_client(FakeResponse(text=HOMEPAGE_HTML))
     data = await client.async_get_homepage_data()
-    assert data["dashboard_version"] == "abc1234def"
     assert data["cpu_load"] == "38"
     assert data["cpu_temp"].startswith("135°F / 57°C")
     assert data["disk_root"]["total_gb"] == 219.56
@@ -414,6 +410,19 @@ async def test_get_modes_with_network_fetches_once() -> None:
 async def test_get_callsign() -> None:
     client, _ = make_client(FakeResponse(text=HOMEPAGE_HTML))
     assert await client.async_get_callsign() == "W4DW"
+
+
+async def test_get_dashboard_version() -> None:
+    client, session = make_client(FakeResponse(text="abc1234def"))
+    assert await client.async_get_dashboard_version() == "abc1234def"
+    session.get.assert_called_once_with(
+        f"http://wpsd.local:8080{ENDPOINT_CHECKUPDATES}"
+    )
+
+
+async def test_get_dashboard_version_empty() -> None:
+    client, session = make_client(FakeResponse(text=""))
+    assert await client.async_get_dashboard_version() is None
 
 
 @pytest.mark.parametrize("method", ["_async_get_text", "_async_get_json"])

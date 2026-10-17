@@ -24,7 +24,6 @@ RADIO_DATA: dict[str, Any] = {
 }
 
 HOMEPAGE_DATA: dict[str, Any] = {
-    "dashboard_version": "abc1234def",
     "cpu_load": "38",
     "cpu_temp": "135°F / 57°C",
     "disk_root": {"percent": 1.99, "used_gb": 4.37, "total_gb": 219.56},
@@ -66,6 +65,7 @@ def mock_wpsd() -> Generator[dict[str, AsyncMock | MagicMock]]:
     """Patch every WpsdClient method the integration calls."""
     mocks: dict[str, AsyncMock | MagicMock] = {
         "async_get_callsign": AsyncMock(return_value=CALLSIGN),
+        "async_get_dashboard_version": AsyncMock(return_value="abc1234def"),
         "async_get_radio_html": AsyncMock(return_value="<html></html>"),
         "async_get_homepage_html": AsyncMock(return_value="<html></html>"),
         "async_get_hw_info_html": AsyncMock(return_value="<html></html>"),

@@ -29,6 +29,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: WpsdConfigEntry) -> bool
 
     try:
         client.callsign = await client.async_get_callsign()
+        client.dashboard_version = await client.async_get_dashboard_version()
     except (TimeoutError, aiohttp.ClientError) as err:
         raise ConfigEntryNotReady(
             translation_domain=DOMAIN,

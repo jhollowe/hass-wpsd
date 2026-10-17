@@ -120,16 +120,12 @@ class WpsdSystemCoordinator(WpsdCoordinator[WpsdSystemData]):
 
     async def _async_fetch(self) -> WpsdSystemData:
         """Fetch each page once, concurrently, parsing HTML in the executor."""
-        radio_html, homepage_html, hw_info_html = await asyncio.gather(
+        radio_html, hw_info_html = await asyncio.gather(
             self.client.async_get_radio_html(),
-            self.client.async_get_homepage_html(),
             self.client.async_get_hw_info_html(),
         )
-        radio_data, homepage_data, hw_info_data = await asyncio.gather(
+        radio_data, hw_info_data = await asyncio.gather(
             self.hass.async_add_executor_job(self.client.parse_radio_data, radio_html),
-            self.hass.async_add_executor_job(
-                self.client.parse_homepage_data, homepage_html
-            ),
             self.hass.async_add_executor_job(
                 self.client.parse_hw_info_data, hw_info_html
             ),
@@ -137,7 +133,7 @@ class WpsdSystemCoordinator(WpsdCoordinator[WpsdSystemData]):
         return WpsdSystemData(
             active_mode=radio_data["radio_status"],
             firmware=radio_data["firmware"],
-            dashboard_version=homepage_data["dashboard_version"],
+            dashboard_version=self.client.dashboard_version,
             tx_freq=radio_data["tx_freq"],
             rx_freq=radio_data["rx_freq"],
             cpu_load=hw_info_data["cpu_load"],

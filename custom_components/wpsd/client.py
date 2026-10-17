@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 
 from .const import (
     ENDPOINT_API,
+    ENDPOINT_CHECKUPDATES,
     ENDPOINT_HOMEPAGE,
     ENDPOINT_HW_INFO,
     ENDPOINT_RADIOINFO,
@@ -41,7 +42,6 @@ class RadioData(TypedDict):
 class HomepageData(TypedDict):
     """Values parsed from the dashboard homepage."""
 
-    dashboard_version: str | None
     cpu_load: str | None
     cpu_temp: str | None
     disk_root: DiskUsage | None
@@ -77,6 +77,7 @@ class WpsdClient:
         self._session = session
         self._base_url = _normalize_url(url)
         self.callsign: str | None = None
+        self.dashboard_version: str | None = None
 
     async def _async_get_json(self, endpoint: str) -> Any:
         """Fetch JSON from an endpoint."""
@@ -133,7 +134,6 @@ class WpsdClient:
         disk_root = WpsdClient._parse_disk_usage_stats(html, "/")
         disk_varlog = WpsdClient._parse_disk_usage_stats(html, "/var/log")
         return {
-            "dashboard_version": WpsdClient._parse_dashboard_version(html),
             "cpu_load": WpsdClient._parse_cpu_load(html),
             "cpu_temp": WpsdClient._parse_cpu_temp(html),
             "disk_root": disk_root,
@@ -373,23 +373,14 @@ class WpsdClient:
         callsign = title.get_text().split(" - ", 1)[0].strip()
         return callsign or None
 
-    @staticmethod
-    def _parse_dashboard_version(html: str) -> str | None:
-        """Parse the WPSD dashboard version (git short hash) from homepage HTML.
+    async def async_get_dashboard_version(self) -> str | None:
+        """Get the WPSD dashboard version from includes/checkupdates.php.
 
-        The dashboard renders it as:
-        <span title='WPSD Dashboard Version # abc1234def'>
-        WPSD Dashboard Ver.# abc1234def
-        </span>
+        This endpoint returns just the version string (git short hash) and
+        is fetched only once on integration load.
         """
-        prefix = "WPSD Dashboard Ver"
-        soup = BeautifulSoup(html, "html.parser")
-        for span in soup.find_all("span"):
-            text = span.get_text(strip=True)
-            if text.startswith(prefix) and "#" in text:
-                version = text.split("#", 1)[1].strip()
-                return version or None
-        return None
+        text = await self._async_get_text(ENDPOINT_CHECKUPDATES)
+        return text.strip() or None
 
     @staticmethod
     def _parse_disk_usage_stats(html: str, mount: str) -> DiskUsage | None:
