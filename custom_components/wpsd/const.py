@@ -40,7 +40,6 @@ MODE_STATES: Final[list[str]] = [
     MODE_STATE_PAUSED,
 ]
 
-CONF_URL: Final = "url"
 CONF_MODE_SCAN_INTERVAL: Final = "mode_scan_interval"
 CONF_SYSTEM_SCAN_INTERVAL: Final = "system_scan_interval"
 DEFAULT_MODE_SCAN_INTERVAL: Final = 5

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from homeassistant.const import CONF_URL
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_URL, DOMAIN
+from .const import DOMAIN
 from .coordinator import WpsdCoordinator
 
 
