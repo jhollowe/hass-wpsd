@@ -34,7 +34,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: WpsdConfigEntry) -> bool
         raise ConfigEntryNotReady(
             translation_domain=DOMAIN,
             translation_key="cannot_connect",
-            translation_placeholders={"error": str(err)},
+            translation_placeholders={"error": str(err), "url": entry.data[CONF_URL]},
         ) from err
 
     system_coordinator = WpsdSystemCoordinator(hass, entry, client)

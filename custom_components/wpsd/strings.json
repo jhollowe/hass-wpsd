@@ -109,6 +109,12 @@
               "error": "[%key:component::wpsd::entity::sensor::dmr::state::error%]",
               "paused": "[%key:component::wpsd::entity::sensor::dmr::state::paused%]"
             }
+          },
+          "dmr_id": {
+            "name": "DMR ID"
+          },
+          "dmr_cc": {
+            "name": "DMR Color Code"
           }
         }
       },
@@ -204,7 +210,7 @@
   },
   "exceptions": {
     "cannot_connect": {
-      "message": "Unable to reach WPSD: {error}"
+      "message": "Unable to reach WPSD {url}: {error}"
     }
   },
   "repairs": {

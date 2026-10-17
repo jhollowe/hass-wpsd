@@ -211,7 +211,7 @@ class WpsdClient:
         soup = BeautifulSoup(html, "html.parser")
         for pill in soup.select("div.status-pill"):
             span = pill.find("span")
-            if span and span.get_text(strip=True) == "DMR ID":
+            if span and span.get_text(strip=True) == "ID":
                 value_span = pill.select_one("span.pill-value")
                 if value_span:
                     return value_span.get_text(strip=True) or None

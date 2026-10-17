@@ -9,6 +9,7 @@ from datetime import timedelta
 
 import aiohttp
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_URL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -94,7 +95,10 @@ class WpsdCoordinator[DataT](DataUpdateCoordinator[DataT]):
             raise UpdateFailed(
                 translation_domain=DOMAIN,
                 translation_key="cannot_connect",
-                translation_placeholders={"error": str(err) or type(err).__name__},
+                translation_placeholders={
+                    "error": str(err) or type(err).__name__,
+                    "url": self.config_entry.data[CONF_URL],
+                },
             ) from err
         await async_delete_unreachable_issue(self.hass, self.config_entry.entry_id)
         return data

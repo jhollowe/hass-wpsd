@@ -111,6 +111,12 @@
               "error": "Error",
               "paused": "Paused"
             }
+          },
+          "dmr_id": {
+            "name": "DMR ID"
+          },
+          "dmr_cc": {
+            "name": "DMR Color Code"
           }
         }
       },
