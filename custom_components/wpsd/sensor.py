@@ -36,7 +36,6 @@ from .entity import WpsdEntity
 PARALLEL_UPDATES = 0
 
 _NUMBER = re.compile(r"[\d.]+")
-_CELSIUS = re.compile(r"([\d.]+)°C")
 
 
 def _first_number(value: str | None) -> float | None:
@@ -45,16 +44,6 @@ def _first_number(value: str | None) -> float | None:
         return None
     try:
         return float(match.group())
-    except ValueError:
-        return None
-
-
-def _celsius(value: str | None) -> float | None:
-    """Return the Celsius part of a value like "135°F / 57°C"."""
-    if value is None or (match := _CELSIUS.search(value)) is None:
-        return None
-    try:
-        return float(match.group(1))
     except ValueError:
         return None
 
@@ -84,7 +73,7 @@ SENSORS: tuple[WpsdSensorEntityDescription, ...] = (
         key="firmware",
         translation_key="firmware",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: data.firmware,
+        value_fn=lambda data: data.modem_firmware,
     ),
     WpsdSensorEntityDescription(
         key="disk_usage_root",
@@ -162,16 +151,16 @@ SENSORS: tuple[WpsdSensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: _first_number(data.cpu_load),
+        value_fn=lambda data: data.cpu_load,
     ),
     WpsdSensorEntityDescription(
         key="cpu_temp",
         translation_key="cpu_temp",
         entity_category=EntityCategory.DIAGNOSTIC,
         device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: _celsius(data.cpu_temp),
+        value_fn=lambda data: data.cpu_temp,
     ),
 )
 

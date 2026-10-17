@@ -29,4 +29,4 @@ async def test_diagnostics(
     assert result["entry"] == {"url": "http://wpsd.local"}
     assert result["callsign"] == CALLSIGN
     assert result["modes"] == {"modes": MODES, "networks": NETWORKS}
-    assert result["system"]["firmware"] == "MMDVM_HS_Hat-v1.6.1"
+    assert result["system"]["modem_firmware"] == "MMDVM_HS_Hat-v1.6.1"

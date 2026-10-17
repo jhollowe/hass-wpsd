@@ -47,8 +47,8 @@ def entity_id(hass: HomeAssistant, entry: MockConfigEntry, suffix: str) -> str:
         ("firmware", "MMDVM_HS_Hat-v1.6.1"),
         ("tx_freq", "438.8"),
         ("rx_freq", "438.8"),
-        ("cpu_load", "38.0"),
-        ("cpu_temp", "57.0"),
+        ("cpu_load", "38"),
+        ("cpu_temp", "57.2222222222222"),
         ("disk_usage_root", "1.99"),
         ("disk_usage_varlog", "4.69"),
     ],
@@ -93,7 +93,7 @@ async def test_disk_size_sensors_disabled_by_default(
     [
         ("tx_freq", "no number here"),
         ("tx_freq", "1.2.3 MHz"),
-        ("cpu_load", "n/a"),
+        ("cpu_temp", None),
     ],
 )
 async def test_unparseable_numeric_value_is_unknown(
@@ -110,16 +110,14 @@ async def test_unparseable_numeric_value_is_unknown(
     assert state.state == STATE_UNKNOWN
 
 
-@pytest.mark.parametrize("cpu_temp", ["135°F", "..°C"])
-async def test_cpu_temp_without_celsius_is_unknown(
+async def test_cpu_temp_when_unparseable_is_unknown(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
     mock_wpsd,
-    cpu_temp: str,
 ) -> None:
     mock_wpsd["parse_hw_info_data"].return_value = {
         **HOMEPAGE_DATA,
-        "cpu_temp": cpu_temp,
+        "cpu_temp": None,
     }
     await setup_entry(hass, mock_config_entry)
     state = hass.states.get(entity_id(hass, mock_config_entry, "cpu_temp"))
@@ -264,17 +262,17 @@ async def test_system_sensors_poll_every_30s_by_default(
     await setup_entry(hass, mock_config_entry)
     mock_wpsd["parse_hw_info_data"].return_value = {
         **HOMEPAGE_DATA,
-        "cpu_load": "77",
+        "cpu_load": 77,
     }
 
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=10))
     await hass.async_block_till_done(wait_background_tasks=True)
     eid = entity_id(hass, mock_config_entry, "cpu_load")
-    assert hass.states.get(eid).state == "38.0"
+    assert hass.states.get(eid).state == "38"
 
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=31))
     await hass.async_block_till_done(wait_background_tasks=True)
-    assert hass.states.get(eid).state == "77.0"
+    assert hass.states.get(eid).state == "77"
 
 
 async def test_slower_per_device_interval_is_respected(
@@ -317,5 +315,5 @@ async def test_entities_unavailable_when_polling_fails_then_recover(
     mock_wpsd["parse_modes_with_network"].side_effect = None
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=62))
     await hass.async_block_till_done(wait_background_tasks=True)
-    assert hass.states.get(cpu).state == "38.0"
+    assert hass.states.get(cpu).state == "38"
     assert hass.states.get(dmr).state == "active"

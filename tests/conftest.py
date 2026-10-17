@@ -18,14 +18,14 @@ CALLSIGN = "W4DW"
 
 RADIO_DATA: dict[str, Any] = {
     "radio_status": "IDLE",
-    "firmware": "MMDVM_HS_Hat-v1.6.1",
+    "modem_firmware": "MMDVM_HS_Hat-v1.6.1",
     "tx_freq": "438.800 MHz",
     "rx_freq": "438.800 MHz",
 }
 
 HOMEPAGE_DATA: dict[str, Any] = {
-    "cpu_load": "38",
-    "cpu_temp": "135°F / 57°C",
+    "cpu_load": 38,
+    "cpu_temp": 135,
     "disk_root": {"percent": 1.99, "used_gb": 4.37, "total_gb": 219.56},
     "disk_varlog": {"percent": 4.69, "used_gb": 0.01, "total_gb": 0.25},
 }
@@ -67,7 +67,6 @@ def mock_wpsd() -> Generator[dict[str, AsyncMock | MagicMock]]:
         "async_get_callsign": AsyncMock(return_value=CALLSIGN),
         "async_get_dashboard_version": AsyncMock(return_value="abc1234def"),
         "async_get_radio_html": AsyncMock(return_value="<html></html>"),
-        "async_get_homepage_html": AsyncMock(return_value="<html></html>"),
         "async_get_hw_info_html": AsyncMock(return_value="<html></html>"),
         "async_get_repeater_html": AsyncMock(return_value="<html></html>"),
         "parse_radio_data": MagicMock(return_value=dict(RADIO_DATA)),

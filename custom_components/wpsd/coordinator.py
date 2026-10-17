@@ -34,12 +34,12 @@ class WpsdSystemData:
     """Radio and dashboard data as shown by WPSD (raw text values)."""
 
     active_mode: str
-    firmware: str | None
+    modem_firmware: str | None
     dashboard_version: str | None
     tx_freq: str | None
     rx_freq: str | None
-    cpu_load: str | None
-    cpu_temp: str | None
+    cpu_load: int | None
+    cpu_temp: int | None
     disk_root: DiskUsage | None
     disk_varlog: DiskUsage | None
 
@@ -132,7 +132,7 @@ class WpsdSystemCoordinator(WpsdCoordinator[WpsdSystemData]):
         )
         return WpsdSystemData(
             active_mode=radio_data["radio_status"],
-            firmware=radio_data["firmware"],
+            modem_firmware=radio_data["modem_firmware"],
             dashboard_version=self.client.dashboard_version,
             tx_freq=radio_data["tx_freq"],
             rx_freq=radio_data["rx_freq"],

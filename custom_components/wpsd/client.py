@@ -21,6 +21,8 @@ from .const import (
 
 REQUEST_TIMEOUT = 10
 
+_FAHRENHEIT_TEMP = re.compile(r"([\d.]+)°F")
+
 
 class DiskUsage(TypedDict):
     """Usage of one filesystem, as shown on the dashboard."""
@@ -34,7 +36,7 @@ class RadioData(TypedDict):
     """Values parsed from radioinfo.php."""
 
     radio_status: str
-    firmware: str | None
+    modem_firmware: str | None
     tx_freq: str | None
     rx_freq: str | None
 
@@ -42,8 +44,8 @@ class RadioData(TypedDict):
 class HWInfoData(TypedDict):
     """Values parsed from includes/hw_info.php."""
 
-    cpu_load: str | None
-    cpu_temp: str | None
+    cpu_load: int | None
+    cpu_temp: int | None
     disk_root: DiskUsage | None
     disk_varlog: DiskUsage | None
 
@@ -107,7 +109,7 @@ class WpsdClient:
         """
         return {
             "radio_status": WpsdClient._parse_radio_status(html),
-            "firmware": WpsdClient._parse_firmware(html),
+            "modem_firmware": WpsdClient._parse_modem_firmware(html),
             "tx_freq": WpsdClient._parse_tx_freq(html),
             "rx_freq": WpsdClient._parse_rx_freq(html),
         }
@@ -185,7 +187,7 @@ class WpsdClient:
         return "unknown"
 
     @staticmethod
-    def _parse_firmware(html: str) -> str | None:
+    def _parse_modem_firmware(html: str) -> str | None:
         """Parse the modem firmware version from radioinfo.php HTML.
 
         The firmware is in the last cell of the radio status row.
@@ -306,22 +308,29 @@ class WpsdClient:
                 value = card.select_one("div.stat-value")
                 if value:
                     text = value.get_text(strip=True)
-                    # Extract the percentage (e.g. "38%" -> "38")
+                    # Extract the percentage (e.g. "38%" -> 38)
                     match = re.search(r"(\d+)%", text)
                     if match:
-                        return match.group(1)
+                        return int(match.group(1))
         return None
 
     @staticmethod
-    def _parse_cpu_temp(html: str) -> str | None:
-        """Parse the CPU temperature from hw_info HTML."""
+    def _parse_cpu_temp(html: str) -> int | None:
+        """Parse the CPU temperature in Fahrenheit from hw_info HTML.
+
+        The value is rendered like ``135°F / 57°C``. Returns the Fahrenheit
+        value as an integer, or None if it cannot be parsed.
+        """
         soup = BeautifulSoup(html, "html.parser")
         for card in soup.select("div.stat-card"):
             label = card.select_one("span.stat-label")
             if label and "CPU Temp" in label.get_text():
                 value = card.select_one("div.stat-value")
                 if value:
-                    return value.get_text(strip=True)
+                    text = value.get_text(strip=True)
+                    match = _FAHRENHEIT_TEMP.search(text)
+                    if match:
+                        return int(float(match.group(1)))
         return None
 
     @staticmethod

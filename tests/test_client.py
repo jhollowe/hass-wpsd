@@ -142,12 +142,12 @@ def test_parse_radio_status_missing() -> None:
     assert WpsdClient._parse_radio_status("<div></div>") == "unknown"
 
 
-def test_parse_firmware() -> None:
-    assert WpsdClient._parse_firmware(RADIOINFO_HTML) == "MMDVM_HS_Hat-v1.6.1"
+def test_parse_modem_firmware() -> None:
+    assert WpsdClient._parse_modem_firmware(RADIOINFO_HTML) == "MMDVM_HS_Hat-v1.6.1"
 
 
-def test_parse_firmware_missing() -> None:
-    assert WpsdClient._parse_firmware("<div></div>") is None
+def test_parse_modem_firmware_missing() -> None:
+    assert WpsdClient._parse_modem_firmware("<div></div>") is None
 
 
 def test_parse_tx_and_rx_freq() -> None:
@@ -191,11 +191,11 @@ def test_parse_freq_missing() -> None:
 
 
 def test_parse_cpu_load() -> None:
-    assert WpsdClient._parse_cpu_load(HOMEPAGE_HTML) == "38"
+    assert WpsdClient._parse_cpu_load(HOMEPAGE_HTML) == 38
 
 
 def test_parse_cpu_temp() -> None:
-    assert WpsdClient._parse_cpu_temp(HOMEPAGE_HTML).startswith("135°F / 57°C")
+    assert WpsdClient._parse_cpu_temp(HOMEPAGE_HTML) == 135
 
 
 def test_parse_cpu_missing() -> None:
@@ -333,7 +333,7 @@ async def test_get_radio_data_fetches_once() -> None:
     client, session = make_client(FakeResponse(text=RADIOINFO_HTML))
     assert await client.async_get_radio_data() == {
         "radio_status": "IDLE",
-        "firmware": "MMDVM_HS_Hat-v1.6.1",
+        "modem_firmware": "MMDVM_HS_Hat-v1.6.1",
         "tx_freq": "438.800 MHz",
         "rx_freq": "439.800 MHz",
     }
@@ -342,8 +342,8 @@ async def test_get_radio_data_fetches_once() -> None:
 
 async def test_parse_hw_info_data() -> None:
     data = WpsdClient.parse_hw_info_data(HW_INFO_HTML)
-    assert data["cpu_load"] == "38"
-    assert data["cpu_temp"].startswith("135°F / 57°C")
+    assert data["cpu_load"] == 38
+    assert data["cpu_temp"] == 135
     assert data["disk_root"] == {
         "percent": 1.99,
         "used_gb": 4.37,
@@ -362,8 +362,8 @@ async def test_parse_hw_info_data_missing() -> None:
 async def test_get_hw_info_data_fetches_once() -> None:
     client, session = make_client(FakeResponse(text=HW_INFO_HTML))
     data = await client.async_get_hw_info_data()
-    assert data["cpu_load"] == "38"
-    assert data["cpu_temp"].startswith("135°F / 57°C")
+    assert data["cpu_load"] == 38
+    assert data["cpu_temp"] == 135
     assert data["disk_root"]["total_gb"] == 219.56
     session.get.assert_called_once_with(f"http://wpsd.local:8080{ENDPOINT_HW_INFO}")
 
