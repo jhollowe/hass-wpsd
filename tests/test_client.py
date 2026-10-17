@@ -137,6 +137,29 @@ def test_parse_single_freq_for_tx_and_rx() -> None:
     assert WpsdClient._parse_rx_freq(html) == "438.800 MHz"
 
 
+def test_parse_freq_with_extra_decimal_point() -> None:
+    """Frequencies like 431.962.500 MHz should normalize to 431.9625 MHz."""
+    html = '<div class="divTableCell cell_content middle noMob">431.962.500 MHz</div>'
+    assert WpsdClient._parse_tx_freq(html) == "431.9625 MHz"
+    assert WpsdClient._parse_rx_freq(html) == "431.9625 MHz"
+
+
+def test_parse_freq_with_extra_decimal_point_duplex() -> None:
+    """Duplex hosts with extra decimal points on both frequencies."""
+    html = (
+        '<div class="divTableCell cell_content middle noMob">431.962.500 MHz</div>'
+        '<div class="divTableCell cell_content middle noMob">433.962.500 MHz</div>'
+    )
+    assert WpsdClient._parse_tx_freq(html) == "431.9625 MHz"
+    assert WpsdClient._parse_rx_freq(html) == "433.9625 MHz"
+
+
+def test_parse_freq_normal_decimal_unchanged() -> None:
+    """Normal frequencies with a single decimal point are unchanged."""
+    html = '<div class="divTableCell cell_content middle noMob">438.800 MHz</div>'
+    assert WpsdClient._parse_tx_freq(html) == "438.800 MHz"
+
+
 def test_parse_freq_missing() -> None:
     assert WpsdClient._parse_tx_freq("<div></div>") is None
     assert WpsdClient._parse_rx_freq("<div></div>") is None

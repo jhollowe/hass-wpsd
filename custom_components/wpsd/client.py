@@ -202,6 +202,29 @@ class WpsdClient:
         return None
 
     @staticmethod
+    def _normalize_frequency(text: str) -> str:
+        """Normalize a frequency string, collapsing extra decimal points.
+
+        Some WPSD hosts render frequencies with an extra dot, e.g.
+        ``431.962.500 MHz`` instead of ``431.9625 MHz``. This keeps the
+        first dot as the decimal separator, drops subsequent dots, and
+        strips trailing zeros from the fractional part.
+        """
+        match = re.match(r"([\d.]+)(\s*.*)", text)
+        if not match:
+            return text
+        number_part, rest = match.groups()
+        parts = number_part.split(".")
+        if len(parts) <= 2:
+            return text
+        normalized = parts[0] + "." + "".join(parts[1:])
+        # Drop trailing zeros from the fractional part (e.g. 431.962500 -> 431.9625)
+        integer_part, _, fractional = normalized.partition(".")
+        fractional = fractional.rstrip("0") or "0"
+        normalized = f"{integer_part}.{fractional}"
+        return f"{normalized}{rest}"
+
+    @staticmethod
     def _parse_tx_freq(html: str) -> str | None:
         """Parse the TX frequency from radioinfo.php HTML.
 
@@ -212,7 +235,7 @@ class WpsdClient:
         cells = soup.select("div.divTableCell.cell_content.middle.noMob")
         freq_cells = [c.get_text(strip=True) for c in cells if "MHz" in c.get_text()]
         if freq_cells:
-            return freq_cells[0]
+            return WpsdClient._normalize_frequency(freq_cells[0])
         return None
 
     @staticmethod
@@ -226,9 +249,9 @@ class WpsdClient:
         cells = soup.select("div.divTableCell.cell_content.middle.noMob")
         freq_cells = [c.get_text(strip=True) for c in cells if "MHz" in c.get_text()]
         if len(freq_cells) >= 2:
-            return freq_cells[1]
+            return WpsdClient._normalize_frequency(freq_cells[1])
         if freq_cells:
-            return freq_cells[0]
+            return WpsdClient._normalize_frequency(freq_cells[0])
         return None
 
     @staticmethod
