@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_HOST, CONF_PORT
@@ -62,13 +62,16 @@ def mock_config_entry() -> MockConfigEntry:
 
 
 @pytest.fixture
-def mock_wpsd() -> Generator[dict[str, AsyncMock]]:
+def mock_wpsd() -> Generator[dict[str, AsyncMock | MagicMock]]:
     """Patch every WpsdClient method the integration calls."""
-    mocks = {
+    mocks: dict[str, AsyncMock | MagicMock] = {
         "async_get_callsign": AsyncMock(return_value=CALLSIGN),
-        "async_get_radio_data": AsyncMock(return_value=dict(RADIO_DATA)),
-        "async_get_homepage_data": AsyncMock(return_value=dict(HOMEPAGE_DATA)),
-        "async_get_modes_with_network": AsyncMock(
+        "async_get_radio_html": AsyncMock(return_value="<html></html>"),
+        "async_get_homepage_html": AsyncMock(return_value="<html></html>"),
+        "async_get_repeater_html": AsyncMock(return_value="<html></html>"),
+        "parse_radio_data": MagicMock(return_value=dict(RADIO_DATA)),
+        "parse_homepage_data": MagicMock(return_value=dict(HOMEPAGE_DATA)),
+        "parse_modes_with_network": MagicMock(
             return_value=(dict(MODES), dict(NETWORKS))
         ),
     }

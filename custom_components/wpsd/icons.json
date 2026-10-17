@@ -16,6 +16,9 @@
       "cpu_load": {
         "default": "mdi:cpu-monitor"
       },
+      "cpu_temp": {
+        "default": "mdi:thermometer"
+      },
       "disk_usage_root": {
         "default": "mdi:harddisk"
       },

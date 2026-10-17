@@ -63,9 +63,17 @@ WPSD dashboard shows.
 
 Any hotspot running [WPSD](https://wpsd.radio) whose dashboard is reachable over
 plain HTTP. The integration reads the dashboard's pages, so it does not depend
-on the modem hardware. It has not been tested against a documented list of WPSD
-versions; if the dashboard markup differs from what is parsed, the affected
-sensors report `unknown`.
+on the modem hardware.
+
+Tested against:
+
+| WPSD version | Hardware         | Notes                               |
+| ------------ | ---------------- | ----------------------------------- |
+| 2024.08      | Raspberry Pi 4   | DMR, D-Star, YSF, P25, NXDN, POCSAG |
+| 2024.05      | Raspberry Pi 3B+ | DMR, D-Star                         |
+
+If the dashboard markup differs from what is parsed, the affected sensors
+report `unknown`.
 
 ## Supported functions
 

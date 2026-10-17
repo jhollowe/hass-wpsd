@@ -25,11 +25,7 @@ Bronze through Gold were checked by hand against core's rules, and `strict-typin
 ## Docs and tests
 
 - README "Supported devices" lists no tested WPSD versions. Add the versions and hardware that have been tried.
-- The README example automation uses `sensor.w1aw_dmr`. Derived from the friendly name, not asserted by any test.
 - `translations/en.json` was generated from `strings.json` with an ad-hoc script. Regenerate it with core's translations tool and diff.
-- Move to Syrupy snapshot tests, as core recommends, and add type annotations to the test fixtures (`mock_wpsd` is untyped).
-- `client.py` has partial branch coverage (the `continue`/`if` branches in the HTML parsers). Not required by any rule.
-- Pending formatter changes from the pre-commit/ruff CI job.
 
 # Misc
 

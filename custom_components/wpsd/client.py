@@ -82,18 +82,66 @@ class WpsdClient:
         )
         return data if isinstance(data, list) else []
 
+    async def async_get_radio_html(self) -> str:
+        """Fetch radioinfo.php HTML."""
+        return await self._async_get_text(ENDPOINT_RADIOINFO)
+
+    async def async_get_homepage_html(self) -> str:
+        """Fetch homepage HTML."""
+        return await self._async_get_text(ENDPOINT_HOMEPAGE)
+
+    async def async_get_repeater_html(self) -> str:
+        """Fetch repeaterinfo.php HTML."""
+        return await self._async_get_text(ENDPOINT_REPEATERINFO)
+
+    @staticmethod
+    def parse_radio_data(html: str) -> RadioData:
+        """Parse radioinfo.php HTML into a RadioData dict.
+
+        Runs in the executor because BeautifulSoup parsing is CPU-bound.
+        """
+        return {
+            "radio_status": WpsdClient._parse_radio_status(html),
+            "firmware": WpsdClient._parse_firmware(html),
+            "tx_freq": WpsdClient._parse_tx_freq(html),
+            "rx_freq": WpsdClient._parse_rx_freq(html),
+        }
+
+    @staticmethod
+    def parse_homepage_data(html: str) -> HomepageData:
+        """Parse homepage HTML into a HomepageData dict.
+
+        Runs in the executor because BeautifulSoup parsing is CPU-bound.
+        """
+        disk_root = WpsdClient._parse_disk_usage_stats(html, "/")
+        disk_varlog = WpsdClient._parse_disk_usage_stats(html, "/var/log")
+        return {
+            "dashboard_version": WpsdClient._parse_dashboard_version(html),
+            "cpu_load": WpsdClient._parse_cpu_load(html),
+            "cpu_temp": WpsdClient._parse_cpu_temp(html),
+            "disk_root": disk_root,
+            "disk_varlog": disk_varlog,
+        }
+
+    @staticmethod
+    def parse_modes_with_network(
+        html: str,
+    ) -> tuple[dict[str, str], dict[str, str]]:
+        """Parse repeaterinfo.php HTML into modes and networks dicts.
+
+        Runs in the executor because BeautifulSoup parsing is CPU-bound.
+        """
+        return WpsdClient._parse_modes_enabled(html), WpsdClient._parse_network_status(
+            html
+        )
+
     async def async_get_radio_data(self) -> RadioData:
         """Fetch radioinfo.php once and return all parsed radio data.
 
         Returns a dict with keys: radio_status, firmware, tx_freq, rx_freq.
         """
-        html = await self._async_get_text(ENDPOINT_RADIOINFO)
-        return {
-            "radio_status": self._parse_radio_status(html),
-            "firmware": self._parse_firmware(html),
-            "tx_freq": self._parse_tx_freq(html),
-            "rx_freq": self._parse_rx_freq(html),
-        }
+        html = await self.async_get_radio_html()
+        return self.parse_radio_data(html)
 
     async def async_get_homepage_data(self) -> HomepageData:
         """Fetch the homepage once and return all parsed dashboard data.
@@ -101,16 +149,21 @@ class WpsdClient:
         Returns a dict with keys: dashboard_version, cpu_load, cpu_temp,
         disk_root, disk_varlog.
         """
-        html = await self._async_get_text(ENDPOINT_HOMEPAGE)
-        disk_root = self._parse_disk_usage_stats(html, "/")
-        disk_varlog = self._parse_disk_usage_stats(html, "/var/log")
-        return {
-            "dashboard_version": self._parse_dashboard_version(html),
-            "cpu_load": self._parse_cpu_load(html),
-            "cpu_temp": self._parse_cpu_temp(html),
-            "disk_root": disk_root,
-            "disk_varlog": disk_varlog,
-        }
+        html = await self.async_get_homepage_html()
+        return self.parse_homepage_data(html)
+
+    async def async_get_modes_with_network(
+        self,
+    ) -> tuple[dict[str, str], dict[str, str]]:
+        """Get mode enabled states and network status from repeaterinfo.php.
+
+        Fetches repeaterinfo.php once and returns both mode states and
+        network statuses.
+
+        Returns a tuple of (modes_dict, networks_dict).
+        """
+        html = await self.async_get_repeater_html()
+        return self.parse_modes_with_network(html)
 
     async def async_get_callsign(self) -> str | None:
         """Get the hotspot callsign from the homepage title."""
@@ -126,6 +179,41 @@ class WpsdClient:
         if cells:
             return cells[0].get_text(strip=True)
         return "unknown"
+
+    @staticmethod
+    def _parse_firmware(html: str) -> str | None:
+        """Parse the modem firmware version from radioinfo.php HTML.
+
+        The firmware is in the last cell of the radio status row.
+        """
+        soup = BeautifulSoup(html, "html.parser")
+        cells = soup.select("div.divTableCell.cell_content.middle.noMob")
+        for cell in reversed(cells):
+            text = cell.get_text(strip=True)
+            if any(k in text for k in ("MMDVM", "RB_", "DVM", "dvmega")):
+                return text
+        return None
+
+    @staticmethod
+    def _parse_tx_freq(html: str) -> str | None:
+        """Parse the TX frequency from radioinfo.php HTML."""
+        soup = BeautifulSoup(html, "html.parser")
+        cells = soup.select("div.divTableCell.cell_content.middle.noMob")
+        for cell in cells:
+            text = cell.get_text(strip=True)
+            if "MHz" in text:
+                return text
+        return None
+
+    @staticmethod
+    def _parse_rx_freq(html: str) -> str | None:
+        """Parse the RX frequency from radioinfo.php HTML."""
+        soup = BeautifulSoup(html, "html.parser")
+        cells = soup.select("div.divTableCell.cell_content.middle.noMob")
+        freq_cells = [c.get_text(strip=True) for c in cells if "MHz" in c.get_text()]
+        if len(freq_cells) >= 2:
+            return freq_cells[1]
+        return None
 
     @staticmethod
     def _parse_modes_enabled(html: str) -> dict[str, str]:
@@ -171,54 +259,6 @@ class WpsdClient:
                         status = "inactive"
                     networks[name] = status
         return networks
-
-    async def async_get_modes_with_network(
-        self,
-    ) -> tuple[dict[str, str], dict[str, str]]:
-        """Get mode enabled states and network status from repeaterinfo.php.
-
-        Fetches repeaterinfo.php once and returns both mode states and
-        network statuses.
-
-        Returns a tuple of (modes_dict, networks_dict).
-        """
-        html = await self._async_get_text(ENDPOINT_REPEATERINFO)
-        return self._parse_modes_enabled(html), self._parse_network_status(html)
-
-    @staticmethod
-    def _parse_firmware(html: str) -> str | None:
-        """Parse the modem firmware version from radioinfo.php HTML.
-
-        The firmware is in the last cell of the radio status row.
-        """
-        soup = BeautifulSoup(html, "html.parser")
-        cells = soup.select("div.divTableCell.cell_content.middle.noMob")
-        for cell in reversed(cells):
-            text = cell.get_text(strip=True)
-            if any(k in text for k in ("MMDVM", "RB_", "DVM", "dvmega")):
-                return text
-        return None
-
-    @staticmethod
-    def _parse_tx_freq(html: str) -> str | None:
-        """Parse the TX frequency from radioinfo.php HTML."""
-        soup = BeautifulSoup(html, "html.parser")
-        cells = soup.select("div.divTableCell.cell_content.middle.noMob")
-        for cell in cells:
-            text = cell.get_text(strip=True)
-            if "MHz" in text:
-                return text
-        return None
-
-    @staticmethod
-    def _parse_rx_freq(html: str) -> str | None:
-        """Parse the RX frequency from radioinfo.php HTML."""
-        soup = BeautifulSoup(html, "html.parser")
-        cells = soup.select("div.divTableCell.cell_content.middle.noMob")
-        freq_cells = [c.get_text(strip=True) for c in cells if "MHz" in c.get_text()]
-        if len(freq_cells) >= 2:
-            return freq_cells[1]
-        return None
 
     @staticmethod
     def _parse_cpu_load(html: str) -> str | None:

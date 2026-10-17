@@ -208,5 +208,11 @@
     "cannot_connect": {
       "message": "Unable to reach WPSD: {error}"
     }
+  },
+  "repairs": {
+    "hotspot_unreachable": {
+      "title": "WPSD hotspot unreachable",
+      "description": "The WPSD hotspot at {host} cannot be reached. Check the hotspot's power and network connection."
+    }
   }
 }

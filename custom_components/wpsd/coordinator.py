@@ -21,6 +21,10 @@ from .const import (
     DOMAIN,
     LOGGER,
 )
+from .repairs import (
+    async_create_unreachable_issue,
+    async_delete_unreachable_issue,
+)
 
 type WpsdConfigEntry = ConfigEntry[WpsdData]
 
@@ -80,11 +84,18 @@ class WpsdCoordinator[DataT](DataUpdateCoordinator[DataT]):
         try:
             return await self._async_fetch()
         except (TimeoutError, aiohttp.ClientError) as err:
+            async_create_unreachable_issue(
+                self.hass,
+                self.config_entry.entry_id,
+                self.config_entry.data.get("host", ""),
+            )
             raise UpdateFailed(
                 translation_domain=DOMAIN,
                 translation_key="cannot_connect",
                 translation_placeholders={"error": str(err)},
             ) from err
+        else:
+            async_delete_unreachable_issue(self.hass, self.config_entry.entry_id)
 
     @abstractmethod
     async def _async_fetch(self) -> DataT:
@@ -108,10 +119,16 @@ class WpsdSystemCoordinator(WpsdCoordinator[WpsdSystemData]):
         )
 
     async def _async_fetch(self) -> WpsdSystemData:
-        """Fetch each page once, concurrently."""
+        """Fetch each page once, concurrently, parsing HTML in the executor."""
+        radio_html, homepage_html = await asyncio.gather(
+            self.client.async_get_radio_html(),
+            self.client.async_get_homepage_html(),
+        )
         radio_data, homepage_data = await asyncio.gather(
-            self.client.async_get_radio_data(),
-            self.client.async_get_homepage_data(),
+            self.hass.async_add_executor_job(self.client.parse_radio_data, radio_html),
+            self.hass.async_add_executor_job(
+                self.client.parse_homepage_data, homepage_html
+            ),
         )
         return WpsdSystemData(
             active_mode=radio_data["radio_status"],
@@ -143,8 +160,11 @@ class WpsdModeCoordinator(WpsdCoordinator[WpsdModeData]):
         )
 
     async def _async_fetch(self) -> WpsdModeData:
-        """Fetch mode and network status."""
-        modes, networks = await self.client.async_get_modes_with_network()
+        """Fetch mode and network status, parsing HTML in the executor."""
+        html = await self.client.async_get_repeater_html()
+        modes, networks = await self.hass.async_add_executor_job(
+            self.client.parse_modes_with_network, html
+        )
         return WpsdModeData(modes=modes, networks=networks)
 
 

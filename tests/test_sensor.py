@@ -103,8 +103,8 @@ async def test_unparseable_numeric_value_is_unknown(
     key: str,
     value: str,
 ) -> None:
-    mock_wpsd["async_get_radio_data"].return_value = {**RADIO_DATA, key: value}
-    mock_wpsd["async_get_homepage_data"].return_value = {**HOMEPAGE_DATA, key: value}
+    mock_wpsd["parse_radio_data"].return_value = {**RADIO_DATA, key: value}
+    mock_wpsd["parse_homepage_data"].return_value = {**HOMEPAGE_DATA, key: value}
     await setup_entry(hass, mock_config_entry)
     state = hass.states.get(entity_id(hass, mock_config_entry, key))
     assert state.state == STATE_UNKNOWN
@@ -117,7 +117,7 @@ async def test_cpu_temp_without_celsius_is_unknown(
     mock_wpsd,
     cpu_temp: str,
 ) -> None:
-    mock_wpsd["async_get_homepage_data"].return_value = {
+    mock_wpsd["parse_homepage_data"].return_value = {
         **HOMEPAGE_DATA,
         "cpu_temp": cpu_temp,
     }
@@ -129,7 +129,7 @@ async def test_cpu_temp_without_celsius_is_unknown(
 async def test_missing_disk_data_gives_unknown(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry, mock_wpsd
 ) -> None:
-    mock_wpsd["async_get_homepage_data"].return_value = {
+    mock_wpsd["parse_homepage_data"].return_value = {
         **HOMEPAGE_DATA,
         "disk_root": None,
         "disk_varlog": None,
@@ -208,7 +208,7 @@ async def test_mode_sensor_without_network_has_no_attribute(
 async def test_unrecognised_status_is_unknown(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry, mock_wpsd
 ) -> None:
-    mock_wpsd["async_get_modes_with_network"].return_value = (
+    mock_wpsd["parse_modes_with_network"].return_value = (
         {**MODES, "DMR": "unknown"},
         NETWORKS,
     )
@@ -221,7 +221,7 @@ async def test_missing_mode_does_not_break_setup(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry, mock_wpsd
 ) -> None:
     """A hotspot that only reports DMR must still set up all sensors."""
-    mock_wpsd["async_get_modes_with_network"].return_value = ({"DMR": "active"}, {})
+    mock_wpsd["parse_modes_with_network"].return_value = ({"DMR": "active"}, {})
     await setup_entry(hass, mock_config_entry)
     assert (
         hass.states.get(entity_id(hass, mock_config_entry, "dmr_status")).state
@@ -248,7 +248,7 @@ async def test_mode_sensors_poll_every_5s_by_default(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry, mock_wpsd
 ) -> None:
     await setup_entry(hass, mock_config_entry)
-    mock_wpsd["async_get_modes_with_network"].return_value = (
+    mock_wpsd["parse_modes_with_network"].return_value = (
         {**MODES, "DMR": "paused"},
         NETWORKS,
     )
@@ -262,7 +262,7 @@ async def test_system_sensors_poll_every_30s_by_default(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry, mock_wpsd
 ) -> None:
     await setup_entry(hass, mock_config_entry)
-    mock_wpsd["async_get_homepage_data"].return_value = {
+    mock_wpsd["parse_homepage_data"].return_value = {
         **HOMEPAGE_DATA,
         "cpu_load": "77",
     }
@@ -287,16 +287,16 @@ async def test_slower_per_device_interval_is_respected(
         options={CONF_MODE_SCAN_INTERVAL: 120, CONF_SYSTEM_SCAN_INTERVAL: 600},
     )
     await setup_entry(hass, entry)
-    polls = mock_wpsd["async_get_modes_with_network"]
-    assert polls.await_count == 1
+    polls = mock_wpsd["parse_modes_with_network"]
+    assert polls.call_count == 1
 
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=30))
     await hass.async_block_till_done(wait_background_tasks=True)
-    assert polls.await_count == 1
+    assert polls.call_count == 1
 
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=125))
     await hass.async_block_till_done(wait_background_tasks=True)
-    assert polls.await_count == 2
+    assert polls.call_count == 2
 
 
 async def test_entities_unavailable_when_polling_fails_then_recover(
@@ -306,15 +306,15 @@ async def test_entities_unavailable_when_polling_fails_then_recover(
     cpu = entity_id(hass, mock_config_entry, "cpu_load")
     dmr = entity_id(hass, mock_config_entry, "dmr_status")
 
-    mock_wpsd["async_get_homepage_data"].side_effect = aiohttp.ClientError()
-    mock_wpsd["async_get_modes_with_network"].side_effect = TimeoutError()
+    mock_wpsd["parse_homepage_data"].side_effect = aiohttp.ClientError()
+    mock_wpsd["parse_modes_with_network"].side_effect = TimeoutError()
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=31))
     await hass.async_block_till_done(wait_background_tasks=True)
     assert hass.states.get(cpu).state == STATE_UNAVAILABLE
     assert hass.states.get(dmr).state == STATE_UNAVAILABLE
 
-    mock_wpsd["async_get_homepage_data"].side_effect = None
-    mock_wpsd["async_get_modes_with_network"].side_effect = None
+    mock_wpsd["parse_homepage_data"].side_effect = None
+    mock_wpsd["parse_modes_with_network"].side_effect = None
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=62))
     await hass.async_block_till_done(wait_background_tasks=True)
     assert hass.states.get(cpu).state == "38.0"

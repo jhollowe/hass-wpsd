@@ -69,7 +69,7 @@ async def test_setup_retries_on_timeout(
 async def test_setup_retries_when_platform_data_fails(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry, mock_wpsd
 ) -> None:
-    mock_wpsd["async_get_modes_with_network"].side_effect = aiohttp.ClientError()
+    mock_wpsd["parse_modes_with_network"].side_effect = aiohttp.ClientError()
     await setup_entry(hass, mock_config_entry)
     assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
 
