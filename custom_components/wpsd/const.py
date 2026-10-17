@@ -9,6 +9,7 @@ LOGGER = logging.getLogger(__package__)
 
 ENDPOINT_API: Final = "/api/"
 ENDPOINT_HOMEPAGE: Final = "/"
+ENDPOINT_HW_INFO: Final = "/includes/hw_info.php"
 ENDPOINT_RADIOINFO: Final = "/mmdvmhost/radioinfo.php"
 ENDPOINT_REPEATERINFO: Final = "/mmdvmhost/repeaterinfo.php"
 

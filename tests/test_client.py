@@ -12,6 +12,7 @@ from custom_components.wpsd.client import WpsdClient, _convert_to_gb
 from custom_components.wpsd.const import (
     ENDPOINT_API,
     ENDPOINT_HOMEPAGE,
+    ENDPOINT_HW_INFO,
     ENDPOINT_RADIOINFO,
     ENDPOINT_REPEATERINFO,
 )
@@ -35,6 +36,29 @@ RADIOINFO_HTML = """
 HOMEPAGE_HTML = """
 <html><head><title>W4DW - Dashboard</title></head><body>
 <span title='WPSD Dashboard Version # abc1234def'>WPSD Dashboard Ver.# abc1234def</span>
+<div id="hwInfoTable" class="dashboard-header-stats">
+  <div class="stat-card">
+    <span class="stat-label">CPU Load</span>
+    <div class="stat-value"><a class="tooltip" href="#">38%<span>
+    <strong>Hardware:</strong> Pi 4 (1 of 4)</span></a></div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">CPU Temp</span>
+    <div class="stat-value"><a class="tooltip" href="#">135&deg;F / 57&deg;C<span>
+    <strong>CPU Temperature</strong></span></a></div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Disk Usage</span>
+    <div class="stat-value"><a class="tooltip" href="#">4.37 GB / 219.56 GB<span>
+    <strong>Used:</strong> 1.99%<br>
+    <strong>/var/log (tmpfs):</strong> 12 MB / 256 MB</span></a></div>
+  </div>
+</div>
+</body></html>
+"""
+
+HW_INFO_HTML = """
+<html><body>
 <div id="hwInfoTable" class="dashboard-header-stats">
   <div class="stat-card">
     <span class="stat-label">CPU Load</span>
@@ -347,6 +371,34 @@ async def test_get_homepage_data_fetches_once() -> None:
     assert data["cpu_temp"].startswith("135°F / 57°C")
     assert data["disk_root"]["total_gb"] == 219.56
     session.get.assert_called_once()
+
+
+async def test_parse_hw_info_data() -> None:
+    data = WpsdClient.parse_hw_info_data(HW_INFO_HTML)
+    assert data["cpu_load"] == "38"
+    assert data["cpu_temp"].startswith("135°F / 57°C")
+    assert data["disk_root"] == {
+        "percent": 1.99,
+        "used_gb": 4.37,
+        "total_gb": 219.56,
+    }
+
+
+async def test_parse_hw_info_data_missing() -> None:
+    data = WpsdClient.parse_hw_info_data("<div></div>")
+    assert data["cpu_load"] is None
+    assert data["cpu_temp"] is None
+    assert data["disk_root"] is None
+    assert data["disk_varlog"] is None
+
+
+async def test_get_hw_info_data_fetches_once() -> None:
+    client, session = make_client(FakeResponse(text=HW_INFO_HTML))
+    data = await client.async_get_hw_info_data()
+    assert data["cpu_load"] == "38"
+    assert data["cpu_temp"].startswith("135°F / 57°C")
+    assert data["disk_root"]["total_gb"] == 219.56
+    session.get.assert_called_once_with(f"http://wpsd.local:8080{ENDPOINT_HW_INFO}")
 
 
 async def test_get_modes_with_network_fetches_once() -> None:

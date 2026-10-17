@@ -33,6 +33,8 @@ Bronze through Gold were checked by hand against core's rules, and `strict-typin
 - allow a mode polling speed in seconds
 - check that APRS shows up
 - use hw_info.php to get disk/cpu/etc instead of loading the whole homepage
+- use includes/checkupdates.php to get the version (only needs to happen once on integration load)
+- only load the homepage one time to get the callsign
 - test with more active repeater(s):
   - w0jrw.hopto.org
   - rpt.k0rq.com

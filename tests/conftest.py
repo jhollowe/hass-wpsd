@@ -68,9 +68,11 @@ def mock_wpsd() -> Generator[dict[str, AsyncMock | MagicMock]]:
         "async_get_callsign": AsyncMock(return_value=CALLSIGN),
         "async_get_radio_html": AsyncMock(return_value="<html></html>"),
         "async_get_homepage_html": AsyncMock(return_value="<html></html>"),
+        "async_get_hw_info_html": AsyncMock(return_value="<html></html>"),
         "async_get_repeater_html": AsyncMock(return_value="<html></html>"),
         "parse_radio_data": MagicMock(return_value=dict(RADIO_DATA)),
         "parse_homepage_data": MagicMock(return_value=dict(HOMEPAGE_DATA)),
+        "parse_hw_info_data": MagicMock(return_value=dict(HOMEPAGE_DATA)),
         "parse_modes_with_network": MagicMock(
             return_value=(dict(MODES), dict(NETWORKS))
         ),

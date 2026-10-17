@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from .const import (
     ENDPOINT_API,
     ENDPOINT_HOMEPAGE,
+    ENDPOINT_HW_INFO,
     ENDPOINT_RADIOINFO,
     ENDPOINT_REPEATERINFO,
     LOGGER,
@@ -41,6 +42,15 @@ class HomepageData(TypedDict):
     """Values parsed from the dashboard homepage."""
 
     dashboard_version: str | None
+    cpu_load: str | None
+    cpu_temp: str | None
+    disk_root: DiskUsage | None
+    disk_varlog: DiskUsage | None
+
+
+class HWInfoData(TypedDict):
+    """Values parsed from includes/hw_info.php."""
+
     cpu_load: str | None
     cpu_temp: str | None
     disk_root: DiskUsage | None
@@ -159,6 +169,31 @@ class WpsdClient:
         html = await self.async_get_homepage_html()
         return self.parse_homepage_data(html)
 
+    async def async_get_hw_info_html(self) -> str:
+        """Fetch hw_info.php HTML."""
+        return await self._async_get_text(ENDPOINT_HW_INFO)
+
+    @staticmethod
+    def parse_hw_info_data(html: str) -> HWInfoData:
+        """Parse hw_info.php HTML into an HWInfoData dict.
+
+        Runs in the executor because BeautifulSoup parsing is CPU-bound.
+        """
+        return {
+            "cpu_load": WpsdClient._parse_cpu_load(html),
+            "cpu_temp": WpsdClient._parse_cpu_temp(html),
+            "disk_root": WpsdClient._parse_disk_usage_stats(html, "/"),
+            "disk_varlog": WpsdClient._parse_disk_usage_stats(html, "/var/log"),
+        }
+
+    async def async_get_hw_info_data(self) -> HWInfoData:
+        """Fetch hw_info.php once and return all parsed hardware data.
+
+        Returns a dict with keys: cpu_load, cpu_temp, disk_root, disk_varlog.
+        """
+        html = await self.async_get_hw_info_html()
+        return self.parse_hw_info_data(html)
+
     async def async_get_modes_with_network(
         self,
     ) -> tuple[dict[str, str], dict[str, str]]:
@@ -174,8 +209,7 @@ class WpsdClient:
 
     async def async_get_callsign(self) -> str | None:
         """Get the hotspot callsign from the homepage title."""
-        html = await self._async_get_text(ENDPOINT_HOMEPAGE)
-        return self._parse_callsign(html)
+        return self._parse_callsign(await self.async_get_homepage_html())
 
     @staticmethod
     def _parse_radio_status(html: str) -> str:
@@ -300,8 +334,8 @@ class WpsdClient:
         return networks
 
     @staticmethod
-    def _parse_cpu_load(html: str) -> str | None:
-        """Parse the CPU load percentage from homepage HTML."""
+    def _parse_cpu_load(html: str) -> int | None:
+        """Parse the CPU load percentage from hw_info HTML."""
         soup = BeautifulSoup(html, "html.parser")
         for card in soup.select("div.stat-card"):
             label = card.select_one("span.stat-label")
@@ -317,7 +351,7 @@ class WpsdClient:
 
     @staticmethod
     def _parse_cpu_temp(html: str) -> str | None:
-        """Parse the CPU temperature from homepage HTML."""
+        """Parse the CPU temperature from hw_info HTML."""
         soup = BeautifulSoup(html, "html.parser")
         for card in soup.select("div.stat-card"):
             label = card.select_one("span.stat-label")
