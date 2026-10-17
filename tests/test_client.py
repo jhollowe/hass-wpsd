@@ -130,15 +130,16 @@ def test_parse_tx_and_rx_freq() -> None:
     assert WpsdClient._parse_rx_freq(RADIOINFO_HTML) == "439.800 MHz"
 
 
+def test_parse_single_freq_for_tx_and_rx() -> None:
+    """Hosts using one frequency for both RX and TX (e.g. proton.org.uk)."""
+    html = '<div class="divTableCell cell_content middle noMob">438.800 MHz</div>'
+    assert WpsdClient._parse_tx_freq(html) == "438.800 MHz"
+    assert WpsdClient._parse_rx_freq(html) == "438.800 MHz"
+
+
 def test_parse_freq_missing() -> None:
     assert WpsdClient._parse_tx_freq("<div></div>") is None
     assert WpsdClient._parse_rx_freq("<div></div>") is None
-
-
-def test_parse_rx_freq_needs_two_frequencies() -> None:
-    html = '<div class="divTableCell cell_content middle noMob">438.800 MHz</div>'
-    assert WpsdClient._parse_tx_freq(html) == "438.800 MHz"
-    assert WpsdClient._parse_rx_freq(html) is None
 
 
 def test_parse_cpu_load() -> None:

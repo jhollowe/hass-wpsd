@@ -203,23 +203,32 @@ class WpsdClient:
 
     @staticmethod
     def _parse_tx_freq(html: str) -> str | None:
-        """Parse the TX frequency from radioinfo.php HTML."""
+        """Parse the TX frequency from radioinfo.php HTML.
+
+        When a host uses a single frequency for both RX and TX (simplex),
+        that frequency is returned as the TX frequency.
+        """
         soup = BeautifulSoup(html, "html.parser")
         cells = soup.select("div.divTableCell.cell_content.middle.noMob")
-        for cell in cells:
-            text = cell.get_text(strip=True)
-            if "MHz" in text:
-                return text
+        freq_cells = [c.get_text(strip=True) for c in cells if "MHz" in c.get_text()]
+        if freq_cells:
+            return freq_cells[0]
         return None
 
     @staticmethod
     def _parse_rx_freq(html: str) -> str | None:
-        """Parse the RX frequency from radioinfo.php HTML."""
+        """Parse the RX frequency from radioinfo.php HTML.
+
+        When a host uses a single frequency for both RX and TX (simplex),
+        that frequency is returned as the RX frequency.
+        """
         soup = BeautifulSoup(html, "html.parser")
         cells = soup.select("div.divTableCell.cell_content.middle.noMob")
         freq_cells = [c.get_text(strip=True) for c in cells if "MHz" in c.get_text()]
         if len(freq_cells) >= 2:
             return freq_cells[1]
+        if freq_cells:
+            return freq_cells[0]
         return None
 
     @staticmethod
